@@ -203,7 +203,13 @@
                 </div>
 
                 <div class="flex items-center gap-2 shrink-0">
-                    <button onclick="resetAllFilters()" class="neo-btn bg-neoCard hover:bg-neoCardInner text-white text-xs font-extrabold px-3.5 py-2 rounded-xl">
+                    <!-- BOTÓN DE GUARDADO LOCAL MANUAL -->
+                    <button onclick="forceManualLocalStorageSave()" class="neo-btn bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-extrabold px-3 py-2 rounded-xl flex items-center gap-1.5" title="Guardar cambios localmente en este dispositivo">
+                        <i class="fa-solid fa-floppy-disk text-emerald-200"></i>
+                        <span class="hidden sm:inline">Guardar Local</span>
+                    </button>
+
+                    <button onclick="resetAllFilters()" class="neo-btn bg-neoCard hover:bg-neoCardInner text-white text-xs font-extrabold px-3 py-2 rounded-xl">
                         Inicio
                     </button>
 
@@ -216,7 +222,7 @@
                                 <i class="fa-solid fa-cloud"></i> Nube Firebase & Marca
                             </button>
                             <button onclick="forceCloudSyncNow(); closeSettingsMenu();" class="w-full text-left px-3 py-2 text-xs text-emerald-400 hover:bg-neoCardInner rounded-lg flex items-center gap-2 font-semibold">
-                                <i class="fa-solid fa-arrows-rotate"></i> Sincronizar Ahora
+                                <i class="fa-solid fa-arrows-rotate"></i> Sincronizar con Nube
                             </button>
                             <hr class="border-neoBorder my-1">
                             <button onclick="openPrintRegisterModal(); closeSettingsMenu();" class="w-full text-left px-3 py-2 text-xs text-gray-200 hover:bg-neoCardInner rounded-lg flex items-center gap-2 font-semibold">
@@ -371,10 +377,10 @@
 
     <!-- Toast Notificación -->
     <div id="toastNotification" class="fixed bottom-5 right-5 neo-box px-4 py-3 flex items-center gap-3 transition-all duration-300 translate-y-24 opacity-0 z-50 border-neoGold">
-        <i id="toastIcon" class="fa-solid fa-cloud-arrow-up text-neoGold text-sm"></i>
+        <i id="toastIcon" class="fa-solid fa-floppy-disk text-emerald-400 text-sm"></i>
         <div>
-            <p class="text-white font-bold text-xs" id="toastTitle">Sincronizado</p>
-            <p class="text-[10px] text-zinc-400 font-mono" id="toastSubtitle">Nube actualizada</p>
+            <p class="text-white font-bold text-xs" id="toastTitle">Guardado</p>
+            <p class="text-[10px] text-zinc-400 font-mono" id="toastSubtitle">Dispositivo actualizado</p>
         </div>
     </div>
 
@@ -812,11 +818,16 @@
                 const docRef = doc(firestoreDb, 'artifacts', cloudConfig.firebaseConfig.projectId || 'dvela-taller', 'public', 'data', 'devices_workshop_v2', cloudConfig.spaceId);
                 appState.updatedAt = Date.now();
                 await setDoc(docRef, appState, { merge: true });
-                showToast("Nube Actualizada", `Sincronizado con ${cloudConfig.spaceId}`);
+                showToast("Nube Sincronizada", `Datos subidos a ${cloudConfig.spaceId}`);
             } catch (e) {}
         }
 
         window.forceCloudSyncNow = () => pushStateToCloud();
+
+        window.forceManualLocalStorageSave = function() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+            showToast("Guardado Local Exitoso", "Todos los datos se guardaron en este equipo");
+        };
 
         function showToast(title, subtitle) {
             const t = document.getElementById('toastNotification');
