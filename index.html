@@ -1,0 +1,2269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recepción de Taller - Control Interno</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & JetBrains Mono para códigos/órdenes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brandOrange: '#FF5A1F',
+                        brandOrangeHover: '#E0430B',
+                        brandCream: '#FAF8F5',
+                        brandGreen: '#10B981',
+                        brandYellow: '#FBBF24',
+                        brandInk: '#111111',
+                    },
+                    boxShadow: {
+                        'brutal': '4px 4px 0px 0px #111111',
+                        'brutal-lg': '6px 6px 0px 0px #111111',
+                        'brutal-sm': '2px 2px 0px 0px #111111',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #FAF8F5;
+            color: #111111;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Efecto de botón físico al presionar */
+        .btn-brutal {
+            transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.15s ease;
+        }
+        .btn-brutal:active {
+            transform: translate(3px, 3px);
+            box-shadow: 1px 1px 0px 0px #111111 !important;
+        }
+
+        /* Estilos personalizados para impresión de Recibo y Etiqueta */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #print-area, #print-area * {
+                visibility: visible;
+            }
+            #print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                max-width: 80mm; /* Ideal para impresora térmica 80mm o A4 centrado */
+                margin: 0 auto;
+                padding: 0;
+                background: white !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-shadow-none {
+                box-shadow: none !important;
+            }
+        }
+
+        /* Scrollbar limpia */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #FAF8F5;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #111111;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans antialiased selection:bg-brandOrange selection:text-white">
+
+    <!-- NOTIFICACIÓN FLOTANTE (Toast en lugar de alert) -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- CABECERA SUPERIOR -->
+    <header class="bg-brandOrange border-b-4 border-brandInk sticky top-0 z-30 no-print">
+        <div class="max-w-3xl mx-auto px-4 py-3.5 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <div class="bg-brandInk text-white font-mono font-extrabold px-2.5 py-1 rounded-md text-sm tracking-wider">
+                    TALLER
+                </div>
+                <button onclick="openSettingsModal()" class="text-white font-black text-lg sm:text-xl tracking-tight flex items-center gap-1.5 hover:opacity-90 text-left" title="Clic para editar nombre del taller">
+                    <span id="header-shop-name">Taller Gómez</span>
+                    <svg class="w-4 h-4 opacity-80" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <button id="nav-home-btn" onclick="navigateTo('dashboard')" class="bg-white text-brandInk font-extrabold text-xs sm:text-sm px-3 py-1.5 rounded-lg border-2 border-brandInk shadow-brutal-sm btn-brutal">
+                    Inicio
+                </button>
+                <button onclick="openSettingsModal()" class="bg-brandInk text-white p-2 rounded-lg border-2 border-brandInk hover:bg-neutral-800" title="Configuración y Respaldo">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="flex-1 max-w-3xl w-full mx-auto px-4 py-6">
+
+        <!-- ========================================================= -->
+        <!-- VISTA 1: DASHBOARD DEL TALLER                             -->
+        <!-- ========================================================= -->
+        <section id="view-dashboard" class="space-y-6">
+            
+            <!-- Subcabecera e info de hoy -->
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+                <div>
+                    <h1 id="dashboard-shop-title" class="text-2xl sm:text-3xl font-black tracking-tight text-brandInk">Taller Gómez</h1>
+                    <p class="text-sm sm:text-base font-semibold text-neutral-600 mt-0.5">
+                        Hoy <span class="mx-1">•</span> <span id="today-count" class="text-brandInk font-extrabold">0 equipos</span> recibidos hoy
+                    </p>
+                </div>
+                <div class="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+                    <span id="cloud-status-badge" onclick="openSettingsModal()" class="cursor-pointer bg-white border-2 border-brandInk px-2.5 py-1 rounded-lg text-xs font-extrabold flex items-center gap-1.5" title="Estado de sincronización en la nube">
+                        <span id="cloud-status-dot" class="w-2.5 h-2.5 rounded-full bg-brandYellow"></span>
+                        <span id="cloud-status-text">Conectando...</span>
+                    </span>
+                    <span id="current-date-badge" class="inline-block bg-white border-2 border-brandInk px-3 py-1 rounded-lg text-xs font-mono font-extrabold uppercase tracking-wider">
+                        --/--/---- --:--:-- PE
+                    </span>
+                </div>
+            </div>
+
+            <!-- Tarjetas de Resumen (En revisión / Listos) -->
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="setFilter('En revisión')" id="card-filter-revision" class="bg-white border-[3px] border-brandInk rounded-xl p-4 sm:p-5 shadow-brutal btn-brutal text-left relative overflow-hidden group">
+                    <div class="flex items-center justify-between">
+                        <span id="count-revision" class="text-4xl sm:text-5xl font-black text-brandInk">0</span>
+                        <span class="w-4 h-4 rounded-full bg-brandYellow border-2 border-brandInk"></span>
+                    </div>
+                    <p class="text-sm sm:text-base font-bold text-neutral-700 mt-2">En revisión</p>
+                </button>
+
+                <button onclick="setFilter('Listo')" id="card-filter-listo" class="bg-white border-[3px] border-brandInk rounded-xl p-4 sm:p-5 shadow-brutal btn-brutal text-left relative overflow-hidden group">
+                    <div class="flex items-center justify-between">
+                        <span id="count-listo" class="text-4xl sm:text-5xl font-black text-brandInk">0</span>
+                        <span class="w-4 h-4 rounded-full bg-brandGreen border-2 border-brandInk"></span>
+                    </div>
+                    <p class="text-sm sm:text-base font-bold text-neutral-700 mt-2">Listos</p>
+                </button>
+            </div>
+
+            <!-- Botón Gigante "+ NUEVA ORDEN" -->
+            <button onclick="navigateTo('new-order')" class="w-full bg-brandOrange hover:bg-brandOrangeHover text-white font-black text-lg sm:text-xl py-4 px-6 rounded-xl border-[3px] border-brandInk shadow-brutal-lg btn-brutal flex items-center justify-center gap-2 tracking-wide uppercase">
+                <span class="text-2xl leading-none">+</span> NUEVA ORDEN
+            </button>
+
+            <!-- Buscador y Filtros Rápidos -->
+            <div class="space-y-3 pt-2">
+                <div class="relative">
+                    <input type="text" id="search-input" oninput="renderOrdersList()" placeholder="Buscar por Nº orden, cliente, DNI, ubicación, modelo o IMEI..." class="w-full bg-white border-[3px] border-brandInk rounded-xl pl-11 pr-10 py-3 font-semibold text-sm sm:text-base placeholder:text-neutral-400 focus:outline-none focus:ring-4 focus:ring-brandOrange/30 shadow-brutal-sm">
+                    <svg class="w-5 h-5 text-brandInk absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <button id="clear-search-btn" onclick="clearSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black bg-neutral-200 hover:bg-neutral-300 px-2 py-1 rounded">
+                        ✕
+                    </button>
+                </div>
+
+                <!-- Píldoras de estado y pagos -->
+                <div class="flex items-center gap-2 overflow-x-auto pb-1">
+                    <button onclick="setFilter('TODOS')" data-filter="TODOS" class="filter-pill bg-brandInk text-white border-2 border-brandInk px-3.5 py-1.5 rounded-lg text-xs font-extrabold whitespace-nowrap">
+                        Todos (<span id="pill-count-all">0</span>)
+                    </button>
+                    <button onclick="setFilter('En revisión')" data-filter="En revisión" class="filter-pill bg-white text-brandInk border-2 border-brandInk px-3.5 py-1.5 rounded-lg text-xs font-extrabold whitespace-nowrap">
+                        En revisión
+                    </button>
+                    <button onclick="setFilter('Listo')" data-filter="Listo" class="filter-pill bg-white text-brandInk border-2 border-brandInk px-3.5 py-1.5 rounded-lg text-xs font-extrabold whitespace-nowrap">
+                        Listos
+                    </button>
+                    <button onclick="setFilter('Entregado')" data-filter="Entregado" class="filter-pill bg-white text-brandInk border-2 border-brandInk px-3.5 py-1.5 rounded-lg text-xs font-extrabold whitespace-nowrap">
+                        Entregados (<span id="pill-count-delivered">0</span>)
+                    </button>
+                    <button onclick="setFilter('CON_SALDO')" data-filter="CON_SALDO" class="filter-pill bg-white text-brandInk border-2 border-brandInk px-3.5 py-1.5 rounded-lg text-xs font-extrabold whitespace-nowrap">
+                        💰 Con Saldo (<span id="pill-count-unpaid">0</span>)
+                    </button>
+                    <button onclick="setFilter('PAGADOS')" data-filter="PAGADOS" class="filter-pill bg-white text-brandInk border-2 border-brandInk px-3.5 py-1.5 rounded-lg text-xs font-extrabold whitespace-nowrap">
+                        ✅ Pagados
+                    </button>
+                </div>
+            </div>
+
+            <!-- Lista de Órdenes -->
+            <div id="orders-list" class="space-y-3.5 pb-10">
+                <!-- Se llena dinámicamente con JS -->
+            </div>
+
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- VISTA 2: FORMULARIO "+ NUEVA ORDEN" (RECEPCIÓN RÁPIDA)    -->
+        <!-- ========================================================= -->
+        <section id="view-new-order" class="hidden space-y-5 pb-12">
+            <div class="flex items-center justify-between">
+                <button onclick="navigateTo('dashboard')" class="bg-white border-2 border-brandInk px-3 py-1.5 rounded-lg font-extrabold text-sm shadow-brutal-sm btn-brutal flex items-center gap-1">
+                    ← Volver
+                </button>
+                <span class="bg-brandInk text-white font-mono text-xs font-bold px-3 py-1 rounded-md">
+                    NUEVA RECEPCIÓN
+                </span>
+            </div>
+
+            <form id="new-order-form" onsubmit="handleSaveOrder(event)" class="space-y-4">
+                
+                <!-- Cliente -->
+                <div class="bg-white border-[3px] border-brandInk rounded-xl p-3.5 shadow-brutal-sm">
+                    <label for="input-cliente" class="block text-xs font-black uppercase tracking-wider text-neutral-600 mb-1">
+                        CLIENTE *
+                    </label>
+                    <input type="text" id="input-cliente" required placeholder="Ej. Ana Gómez" class="w-full text-lg sm:text-xl font-extrabold text-brandInk placeholder:text-neutral-300 focus:outline-none">
+                </div>
+
+                <!-- DNI / Identificación y Teléfono -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-white border-[3px] border-brandInk rounded-xl p-3.5 shadow-brutal-sm">
+                        <label for="input-dni" class="block text-xs font-black uppercase tracking-wider text-neutral-600 mb-1">
+                            DNI / IDENTIFICACIÓN
+                        </label>
+                        <input type="text" id="input-dni" placeholder="Ej. 45891234 / CE" class="w-full font-mono text-lg font-extrabold text-brandInk placeholder:text-neutral-300 focus:outline-none">
+                    </div>
+
+                    <div class="bg-white border-[3px] border-brandInk rounded-xl p-3.5 shadow-brutal-sm">
+                        <label for="input-telefono" class="block text-xs font-black uppercase tracking-wider text-neutral-600 mb-1">
+                            TELÉFONO (Opcional)
+                        </label>
+                        <input type="tel" id="input-telefono" placeholder="Ej. 987 654 321" class="w-full text-lg font-extrabold text-brandInk placeholder:text-neutral-300 focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- Ubicación / Dirección / Distrito -->
+                <div class="bg-white border-[3px] border-brandInk rounded-xl p-3.5 shadow-brutal-sm">
+                    <label for="input-ubicacion" class="block text-xs font-black uppercase tracking-wider text-neutral-600 mb-1">
+                        UBICACIÓN / DISTRITO O DIRECCIÓN
+                    </label>
+                    <input type="text" id="input-ubicacion" placeholder="Ej. Callao / Av. Sáenz Peña 450" class="w-full text-base sm:text-lg font-extrabold text-brandInk placeholder:text-neutral-300 focus:outline-none">
+                </div>
+
+                <!-- Equipo / Modelo -->
+                <div class="bg-white border-[3px] border-brandInk rounded-xl p-3.5 shadow-brutal-sm">
+                    <label for="input-equipo" class="block text-xs font-black uppercase tracking-wider text-neutral-600 mb-1">
+                        EQUIPO / MODELO *
+                    </label>
+                    <input type="text" id="input-equipo" required placeholder="Ej. Samsung A54 / iPhone 13" class="w-full text-lg sm:text-xl font-extrabold text-brandInk placeholder:text-neutral-300 focus:outline-none">
+                </div>
+
+                <!-- Falla + Botones rápidos -->
+                <div class="bg-white border-[3px] border-brandInk rounded-xl p-3.5 shadow-brutal-sm space-y-2.5">
+                    <label for="input-falla" class="block text-xs font-black uppercase tracking-wider text-neutral-600">
+                        FALLA REPORTADA *
+                    </label>
+                    <input type="text" id="input-falla" required placeholder="Ej. No enciende / Pantalla rota" class="w-full text-lg sm:text-xl font-extrabold text-brandOrange placeholder:text-neutral-300 focus:outline-none">
+                    
+                    <div class="flex flex-wrap gap-1.5 pt-1">
+                        <button type="button" onclick="selectQuickFault('No enciende')" class="bg-brandCream hover:bg-neutral-200 border-2 border-brandInk px-2.5 py-1 rounded-lg text-xs font-bold">No enciende</button>
+                        <button type="button" onclick="selectQuickFault('Pantalla rota')" class="bg-brandCream hover:bg-neutral-200 border-2 border-brandInk px-2.5 py-1 rounded-lg text-xs font-bold">Pantalla rota</button>
+                        <button type="button" onclick="selectQuickFault('No carga')" class="bg-brandCream hover:bg-neutral-200 border-2 border-brandInk px-2.5 py-1 rounded-lg text-xs font-bold">No carga</button>
+                        <button type="button" onclick="selectQuickFault('Batería dañada')" class="bg-brandCream hover:bg-neutral-200 border-2 border-brandInk px-2.5 py-1 rounded-lg text-xs font-bold">Batería</button>
+                        <button type="button" onclick="selectQuickFault('Mojado')" class="bg-brandCream hover:bg-neutral-200 border-2 border-brandInk px-2.5 py-1 rounded-lg text-xs font-bold">Mojado</button>
+                        <button type="button" onclick="selectQuickFault('Software / Cuenta')" class="bg-brandCream hover:bg-neutral-200 border-2 border-brandInk px-2.5 py-1 rounded-lg text-xs font-bold">Software</button>
+                    </div>
+                </div>
+
+                <!-- IMEI / Serie -->
+                <div class="bg-white border-[3px] border-brandInk rounded-xl p-3.5 shadow-brutal-sm">
+                    <label for="input-imei" class="block text-xs font-black uppercase tracking-wider text-neutral-600 mb-1">
+                        IMEI / NÚMERO DE SERIE (Últimos dígitos o completo)
+                    </label>
+                    <input type="text" id="input-imei" placeholder="Ej. .... 4471" class="w-full font-mono text-lg font-extrabold text-brandInk placeholder:text-neutral-300 focus:outline-none">
+                </div>
+
+                <!-- Tarjetas de Check Visual estilo Video: Chip, Forro, Memoria SD, Cargador, Enciende -->
+                <div class="space-y-2.5">
+                    <p class="text-xs font-black uppercase tracking-wider text-neutral-600 px-1">ESTADO Y ACCESORIOS AL RECIBIR</p>
+                    
+                    <!-- Toggle Chip -->
+                    <div onclick="toggleAccessory('chip')" id="toggle-card-chip" class="cursor-pointer select-none bg-white border-[3px] border-brandInk rounded-xl p-3.5 shadow-brutal-sm flex items-center justify-between transition-colors">
+                        <span class="text-lg font-black text-brandInk">Chip / SIM</span>
+                        <div class="flex items-center gap-3">
+                            <span id="label-chip" class="text-sm font-bold text-neutral-400">No trae</span>
+                            <div id="check-circle-chip" class="w-8 h-8 rounded-full border-[3px] border-brandInk flex items-center justify-center bg-white transition-colors">
+                                <svg id="check-icon-chip" class="w-5 h-5 text-white hidden" fill="none" stroke="currentColor" stroke-width="3.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Toggle Forro -->
+                    <div onclick="toggleAccessory('forro')" id="toggle-card-forro" class="cursor-pointer select-none bg-white border-[3px] border-brandInk rounded-xl p-3.5 shadow-brutal-sm flex items-center justify-between transition-colors">
+                        <span class="text-lg font-black text-brandInk">Forro / Funda</span>
+                        <div class="flex items-center gap-3">
+                            <span id="label-forro" class="text-sm font-bold text-neutral-400">No trae</span>
+                            <div id="check-circle-forro" class="w-8 h-8 rounded-full border-[3px] border-brandInk flex items-center justify-center bg-white transition-colors">
+                                <svg id="check-icon-forro" class="w-5 h-5 text-white hidden" fill="none" stroke="currentColor" stroke-width="3.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Toggle Memoria SD -->
+                    <div onclick="toggleAccessory('sd')" id="toggle-card-sd" class="cursor-pointer select-none bg-white border-[3px] border-brandInk rounded-xl p-3.5 shadow-brutal-sm flex items-center justify-between transition-colors">
+                        <span class="text-lg font-black text-brandInk">Memoria MicroSD</span>
+                        <div class="flex items-center gap-3">
+                            <span id="label-sd" class="text-sm font-bold text-neutral-400">No trae</span>
+                            <div id="check-circle-sd" class="w-8 h-8 rounded-full border-[3px] border-brandInk flex items-center justify-center bg-white transition-colors">
+                                <svg id="check-icon-sd" class="w-5 h-5 text-white hidden" fill="none" stroke="currentColor" stroke-width="3.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Toggle Cargador -->
+                    <div onclick="toggleAccessory('cargador')" id="toggle-card-cargador" class="cursor-pointer select-none bg-white border-[3px] border-brandInk rounded-xl p-3.5 shadow-brutal-sm flex items-center justify-between transition-colors">
+                        <span class="text-lg font-black text-brandInk">Cargador / Cable</span>
+                        <div class="flex items-center gap-3">
+                            <span id="label-cargador" class="text-sm font-bold text-neutral-400">No trae</span>
+                            <div id="check-circle-cargador" class="w-8 h-8 rounded-full border-[3px] border-brandInk flex items-center justify-center bg-white transition-colors">
+                                <svg id="check-icon-cargador" class="w-5 h-5 text-white hidden" fill="none" stroke="currentColor" stroke-width="3.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Toggle Enciende -->
+                    <div onclick="toggleAccessory('enciende')" id="toggle-card-enciende" class="cursor-pointer select-none bg-white border-[3px] border-brandInk rounded-xl p-3.5 shadow-brutal-sm flex items-center justify-between transition-colors">
+                        <span class="text-lg font-black text-brandInk">Enciende al recibir</span>
+                        <div class="flex items-center gap-3">
+                            <span id="label-enciende" class="text-sm font-bold text-neutral-400">Apagado</span>
+                            <div id="check-circle-enciende" class="w-8 h-8 rounded-full border-[3px] border-brandInk flex items-center justify-center bg-white transition-colors">
+                                <svg id="check-icon-enciende" class="w-5 h-5 text-white hidden" fill="none" stroke="currentColor" stroke-width="3.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fotos de cómo llegó (SIN LÍMITE DE IMÁGENES) -->
+                <div class="bg-white border-[3px] border-brandInk rounded-xl p-4 shadow-brutal-sm space-y-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-sm font-black uppercase tracking-wider text-brandInk">FOTOS DE CÓMO LLEGÓ</h3>
+                                <span id="form-photo-count-badge" class="bg-brandInk text-white font-mono text-[11px] font-black px-2 py-0.5 rounded">
+                                    0 fotos
+                                </span>
+                            </div>
+                            <p class="text-xs font-semibold text-neutral-500 mt-0.5">Evidencia ilimitada de golpes, pantalla, bordes o tapa</p>
+                        </div>
+                        <label for="input-photos" class="cursor-pointer bg-brandInk hover:bg-neutral-800 text-white font-extrabold text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border-2 border-brandInk shadow-brutal-sm btn-brutal flex items-center gap-1.5 shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            <span>+ Fotos</span>
+                        </label>
+                        <input type="file" id="input-photos" accept="image/*" multiple class="hidden" onchange="handlePhotoUpload(event)">
+                    </div>
+
+                    <!-- Contenedor de miniaturas con scroll si hay muchas -->
+                    <div id="photo-preview-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 max-h-96 overflow-y-auto pr-1">
+                        <!-- Se llenan dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- PIN / Patrón -->
+                <div class="bg-white border-[3px] border-brandInk rounded-xl p-3.5 shadow-brutal-sm">
+                    <label for="input-pin" class="block text-xs font-black uppercase tracking-wider text-neutral-600 mb-1">
+                        PIN / PATRÓN / NOTAS DE RECEPCIÓN
+                    </label>
+                    <input type="text" id="input-pin" placeholder="Ej. PIN 1234 o L invertida" class="w-full text-base font-bold text-brandInk placeholder:text-neutral-300 focus:outline-none">
+                </div>
+
+                <!-- SECCIÓN DE PAGO, ADELANTO Y SALDO -->
+                <div class="bg-white border-[3px] border-brandInk rounded-xl p-4 shadow-brutal-sm space-y-3.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-black uppercase tracking-wider text-neutral-600">ESTADO DE PAGO</span>
+                        <span id="form-payment-badge" class="text-xs font-black px-2.5 py-0.5 rounded-full border-2 border-brandInk bg-neutral-200 text-brandInk">
+                            PENDIENTE
+                        </span>
+                    </div>
+
+                    <!-- Botones de estado de pago -->
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" onclick="setFormPaymentStatus('Pendiente')" id="form-pay-btn-Pendiente" class="border-2 border-brandInk rounded-xl py-2.5 px-2 font-black text-xs sm:text-sm bg-brandInk text-white shadow-brutal-sm">
+                            Pendiente
+                        </button>
+                        <button type="button" onclick="setFormPaymentStatus('Adelanto')" id="form-pay-btn-Adelanto" class="border-2 border-brandInk rounded-xl py-2.5 px-2 font-black text-xs sm:text-sm bg-brandCream text-brandInk">
+                            Adelanto
+                        </button>
+                        <button type="button" onclick="setFormPaymentStatus('Pagado')" id="form-pay-btn-Pagado" class="border-2 border-brandInk rounded-xl py-2.5 px-2 font-black text-xs sm:text-sm bg-brandCream text-brandInk">
+                            Pagado
+                        </button>
+                    </div>
+
+                    <!-- Montos: Costo Total, Adelanto y Saldo Restante -->
+                    <div class="grid grid-cols-3 gap-2.5 pt-1">
+                        <div class="bg-brandCream border-2 border-brandInk rounded-xl p-2.5">
+                            <label for="input-costo" class="block text-[10px] sm:text-xs font-black uppercase text-neutral-600 mb-0.5">
+                                COSTO TOTAL (<span class="currency-symbol">S/</span>)
+                            </label>
+                            <input type="number" step="0.01" min="0" id="input-costo" oninput="recalculateFormPayment()" placeholder="0.00" class="w-full bg-transparent font-mono text-base sm:text-lg font-black text-brandInk focus:outline-none">
+                        </div>
+
+                        <div class="bg-brandCream border-2 border-brandInk rounded-xl p-2.5">
+                            <label for="input-adelanto" class="block text-[10px] sm:text-xs font-black uppercase text-neutral-600 mb-0.5">
+                                ADELANTO (<span class="currency-symbol">S/</span>)
+                            </label>
+                            <input type="number" step="0.01" min="0" id="input-adelanto" oninput="recalculateFormPayment('adelanto')" placeholder="0.00" class="w-full bg-transparent font-mono text-base sm:text-lg font-black text-brandInk focus:outline-none">
+                        </div>
+
+                        <div class="bg-neutral-100 border-2 border-brandInk rounded-xl p-2.5 flex flex-col justify-between">
+                            <span class="block text-[10px] sm:text-xs font-black uppercase text-neutral-500">
+                                SALDO RESTA
+                            </span>
+                            <div id="form-saldo-display" class="font-mono text-base sm:text-lg font-black text-brandOrange">
+                                S/ 0.00
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botón Gigante GUARDAR -->
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-brandOrange hover:bg-brandOrangeHover text-white font-black text-xl py-4 px-6 rounded-xl border-[3px] border-brandInk shadow-brutal-lg btn-brutal tracking-wider uppercase">
+                        GUARDAR ORDEN
+                    </button>
+                </div>
+
+            </form>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- VISTA 3: RECIBO DE ENTRADA Y ETIQUETA ADHERIBLE           -->
+        <!-- ========================================================= -->
+        <section id="view-receipt" class="hidden space-y-6 pb-12">
+            
+            <!-- Barra de acciones superior (No se imprime) -->
+            <div class="flex flex-wrap items-center justify-between gap-3 no-print">
+                <button onclick="navigateTo('dashboard')" class="bg-white border-2 border-brandInk px-3.5 py-2 rounded-xl font-extrabold text-sm shadow-brutal-sm btn-brutal">
+                    ← Volver al Inicio
+                </button>
+                <button onclick="window.print()" class="bg-brandInk hover:bg-neutral-800 text-white border-2 border-brandInk px-4 py-2 rounded-xl font-extrabold text-sm shadow-brutal-sm btn-brutal flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                    </svg>
+                    Imprimir Recibo / Etiqueta
+                </button>
+            </div>
+
+            <!-- ÁREA IMPRIMIBLE (DISEÑO EXACTO DEL VIDEO) -->
+            <div id="print-area" class="max-w-md mx-auto space-y-5">
+                
+                <!-- 1. ETIQUETA ADHERIBLE PARA PEGAR AL CELULAR -->
+                <div class="bg-white border-[3px] border-brandInk rounded-xl p-4 shadow-brutal print-shadow-none relative">
+                    <div class="flex items-center justify-between border-b-2 border-dashed border-neutral-300 pb-2 mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-brandInk inline-block"></span>
+                            <span class="text-xs font-black uppercase tracking-widest text-neutral-500">ETIQUETA DE EQUIPO</span>
+                        </div>
+                        <span id="receipt-tag-shop" class="text-xs font-extrabold text-brandInk">Taller Gómez</span>
+                    </div>
+                    <div class="text-center py-1">
+                        <div id="receipt-tag-number" class="font-mono text-3xl sm:text-4xl font-black tracking-tight text-brandInk">
+                            Nº 0001
+                        </div>
+                        <div id="receipt-tag-summary" class="text-xs font-bold text-neutral-700 mt-1 truncate">
+                            Samsung A54 • No enciende
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Línea de corte visual -->
+                <div class="flex items-center gap-2 text-neutral-400 text-xs font-mono">
+                    <div class="flex-1 border-b-2 border-dashed border-neutral-400"></div>
+                    <span>✂ CORTAR AQUÍ</span>
+                    <div class="flex-1 border-b-2 border-dashed border-neutral-400"></div>
+                </div>
+
+                <!-- 2. RECIBO DE ENTRADA PRINCIPAL -->
+                <div class="bg-white border-[3px] border-brandInk rounded-xl overflow-hidden shadow-brutal-lg print-shadow-none">
+                    <!-- Franja superior del recibo -->
+                    <div class="bg-brandInk text-white px-5 py-3 flex items-center justify-between">
+                        <div>
+                            <span id="receipt-shop-name" class="font-black text-sm uppercase tracking-wider block">Taller Gómez</span>
+                            <span id="receipt-shop-subinfo" class="text-[10px] text-neutral-300 hidden"></span>
+                        </div>
+                        <span id="receipt-date" class="font-mono text-xs text-neutral-300 text-right">15/11/2026 20:30</span>
+                    </div>
+
+                    <div class="p-5 sm:p-6 space-y-4">
+                        <div class="text-center border-b-2 border-brandInk pb-4">
+                            <p class="text-xs font-black uppercase tracking-widest text-neutral-500">RECIBO DE ENTRADA</p>
+                            <h2 id="receipt-order-number" class="font-mono text-3xl sm:text-4xl font-black text-brandInk mt-1">
+                                Orden Nº 0001
+                            </h2>
+                            <div class="mt-2">
+                                <span id="receipt-payment-pill" class="inline-block font-mono text-xs font-black px-3 py-1 rounded-full border-2 border-brandInk bg-brandYellow text-brandInk">
+                                    PENDIENTE
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de datos -->
+                        <div class="space-y-2.5 text-sm sm:text-base">
+                            <div class="flex justify-between items-baseline gap-4">
+                                <span class="font-bold text-neutral-500">Cliente</span>
+                                <span id="receipt-cliente" class="font-black text-brandInk text-right">Ana Gómez</span>
+                            </div>
+                            <div id="receipt-row-dni" class="flex justify-between items-baseline gap-4">
+                                <span class="font-bold text-neutral-500">DNI / Doc.</span>
+                                <span id="receipt-dni" class="font-mono font-bold text-brandInk text-right">45891234</span>
+                            </div>
+                            <div id="receipt-row-telefono" class="flex justify-between items-baseline gap-4">
+                                <span class="font-bold text-neutral-500">Teléfono</span>
+                                <span id="receipt-telefono" class="font-mono font-bold text-brandInk text-right">987654321</span>
+                            </div>
+                            <div id="receipt-row-ubicacion" class="flex justify-between items-baseline gap-4">
+                                <span class="font-bold text-neutral-500">Ubicación</span>
+                                <span id="receipt-ubicacion" class="font-bold text-brandInk text-right">Callao</span>
+                            </div>
+                            <div class="flex justify-between items-baseline gap-4 pt-1 border-t border-dashed border-neutral-300">
+                                <span class="font-bold text-neutral-500">Equipo</span>
+                                <span id="receipt-equipo" class="font-black text-brandInk text-right">Samsung A54</span>
+                            </div>
+                            <div class="flex justify-between items-baseline gap-4">
+                                <span class="font-bold text-neutral-500">Falla</span>
+                                <span id="receipt-falla" class="font-black text-brandOrange text-right">No enciende</span>
+                            </div>
+                            <div id="receipt-row-imei" class="flex justify-between items-baseline gap-4">
+                                <span class="font-bold text-neutral-500">IMEI / Serie</span>
+                                <span id="receipt-imei" class="font-mono font-bold text-brandInk text-right">.... 4471</span>
+                            </div>
+                            <div class="flex justify-between items-baseline gap-4 pt-1 border-t border-dashed border-neutral-300">
+                                <span class="font-bold text-neutral-500">Accesorios</span>
+                                <span id="receipt-accessories" class="font-black text-brandInk text-right text-xs sm:text-sm">Chip: Sí • Forro: Sí</span>
+                            </div>
+                            <div class="flex justify-between items-baseline gap-4">
+                                <span class="font-bold text-neutral-500">Estado inicial</span>
+                                <span id="receipt-power" class="font-bold text-brandInk text-right">Apagado</span>
+                            </div>
+
+                            <!-- Bloque de resumen económico en el recibo -->
+                            <div id="receipt-finance-box" class="pt-2 border-t-2 border-brandInk space-y-1.5">
+                                <div class="flex justify-between items-baseline gap-4">
+                                    <span class="font-bold text-neutral-600">Costo Total</span>
+                                    <span id="receipt-costo" class="font-mono font-black text-brandInk text-right">S/ 0.00</span>
+                                </div>
+                                <div class="flex justify-between items-baseline gap-4">
+                                    <span class="font-bold text-neutral-600">Adelanto / Pagado</span>
+                                    <span id="receipt-adelanto" class="font-mono font-bold text-brandGreen text-right">S/ 0.00</span>
+                                </div>
+                                <div class="flex justify-between items-baseline gap-4 pt-1 border-t border-dashed border-neutral-300">
+                                    <span class="font-black text-brandInk">Saldo Restante</span>
+                                    <span id="receipt-saldo" class="font-mono text-lg font-black text-brandOrange text-right">S/ 0.00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Miniaturas de fotos registradas en el recibo -->
+                        <div id="receipt-photos-section" class="hidden pt-3 border-t-2 border-brandInk">
+                            <p id="receipt-photos-title" class="text-xs font-black uppercase tracking-wider text-neutral-500 mb-2">EVIDENCIA FOTOGRÁFICA DE RECEPCIÓN</p>
+                            <div id="receipt-photos-grid" class="grid grid-cols-2 gap-2">
+                                <!-- Fotos aquí -->
+                            </div>
+                        </div>
+
+                        <!-- Pie del comprobante -->
+                        <div class="pt-4 border-t-2 border-brandInk text-center space-y-1">
+                            <p class="text-[11px] font-bold text-neutral-500 leading-snug">
+                                Conserve este recibo para retirar su equipo. No nos responsabilizamos por pérdida de información o chips no declarados.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Botón inferior de retorno -->
+            <div class="max-w-md mx-auto no-print">
+                <button onclick="navigateTo('dashboard')" class="w-full bg-brandOrange hover:bg-brandOrangeHover text-white font-black text-base py-3.5 px-6 rounded-xl border-[3px] border-brandInk shadow-brutal btn-brutal uppercase">
+                    Listo, volver al taller
+                </button>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- VISTA 4: DETALLE Y GESTIÓN INTERNA DE LA ORDEN            -->
+        <!-- ========================================================= -->
+        <section id="view-detail" class="hidden space-y-5 pb-12">
+            
+            <div class="flex items-center justify-between gap-2">
+                <button onclick="navigateTo('dashboard')" class="bg-white border-2 border-brandInk px-3 py-1.5 rounded-lg font-extrabold text-sm shadow-brutal-sm btn-brutal">
+                    ← Volver
+                </button>
+                <div class="flex items-center gap-2">
+                    <button onclick="openCurrentReceipt()" class="bg-white border-2 border-brandInk px-3 py-1.5 rounded-lg font-extrabold text-xs sm:text-sm shadow-brutal-sm btn-brutal flex items-center gap-1.5">
+                        🖨️ Recibo / Etiqueta
+                    </button>
+                    <button onclick="deleteCurrentOrder()" class="bg-red-100 hover:bg-red-200 text-red-700 border-2 border-brandInk px-3 py-1.5 rounded-lg font-extrabold text-xs sm:text-sm shadow-brutal-sm btn-brutal" title="Eliminar orden">
+                        🗑️
+                    </button>
+                </div>
+            </div>
+
+            <!-- Encabezado de la orden -->
+            <div class="bg-white border-[3px] border-brandInk rounded-xl p-4 sm:p-5 shadow-brutal space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b-2 border-neutral-200 pb-3">
+                    <div>
+                        <span id="detail-order-number" class="font-mono text-sm font-black bg-brandInk text-white px-2.5 py-1 rounded">
+                            Orden Nº 0001
+                        </span>
+                        <h2 id="detail-equipo-cliente" class="text-xl sm:text-2xl font-black text-brandInk mt-2">
+                            Samsung A54 • Ana Gómez
+                        </h2>
+                    </div>
+                    <span id="detail-date" class="text-xs font-bold text-neutral-500">
+                        --/--/----
+                    </span>
+                </div>
+
+                <!-- Selector de Estado (Igual que en el video: En revisión / Listo / Entregado) -->
+                <div>
+                    <p class="text-xs font-black uppercase tracking-wider text-neutral-500 mb-2">ESTADO DEL EQUIPO</p>
+                    <div class="grid grid-cols-3 gap-2.5">
+                        <button type="button" onclick="updateOrderStatus('En revisión')" id="status-btn-revision" class="border-[3px] border-brandInk rounded-xl py-3 px-2 font-black text-xs sm:text-sm text-center transition-all">
+                            En revisión
+                        </button>
+                        <button type="button" onclick="updateOrderStatus('Listo')" id="status-btn-listo" class="border-[3px] border-brandInk rounded-xl py-3 px-2 font-black text-xs sm:text-sm text-center transition-all">
+                            Listo
+                        </button>
+                        <button type="button" onclick="updateOrderStatus('Entregado')" id="status-btn-entregado" class="border-[3px] border-brandInk rounded-xl py-3 px-2 font-black text-xs sm:text-sm text-center transition-all">
+                            Entregado
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información técnica y diagnóstico -->
+            <div class="bg-white border-[3px] border-brandInk rounded-xl p-4 sm:p-5 shadow-brutal space-y-4">
+                <h3 class="text-sm font-black uppercase tracking-wider text-brandInk border-b-2 border-neutral-200 pb-2">
+                    DATOS DEL CLIENTE Y RECEPCIÓN
+                </h3>
+
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <div class="bg-brandCream p-3 rounded-lg border-2 border-brandInk">
+                        <span class="block text-[11px] font-black text-neutral-500 uppercase">Falla Reportada</span>
+                        <span id="detail-falla" class="font-extrabold text-brandOrange">No enciende</span>
+                    </div>
+                    <div class="bg-brandCream p-3 rounded-lg border-2 border-brandInk">
+                        <span class="block text-[11px] font-black text-neutral-500 uppercase">IMEI / Serie</span>
+                        <span id="detail-imei" class="font-mono font-bold text-brandInk">----</span>
+                    </div>
+                    <div class="bg-brandCream p-3 rounded-lg border-2 border-brandInk">
+                        <span class="block text-[11px] font-black text-neutral-500 uppercase">DNI / Identificación</span>
+                        <span id="detail-dni" class="font-mono font-bold text-brandInk">----</span>
+                    </div>
+                    <div class="bg-brandCream p-3 rounded-lg border-2 border-brandInk">
+                        <span class="block text-[11px] font-black text-neutral-500 uppercase">Teléfono</span>
+                        <span id="detail-telefono" class="font-bold text-brandInk">----</span>
+                    </div>
+                    <div class="bg-brandCream p-3 rounded-lg border-2 border-brandInk col-span-2 sm:col-span-1">
+                        <span class="block text-[11px] font-black text-neutral-500 uppercase">Ubicación / Dirección</span>
+                        <span id="detail-ubicacion" class="font-bold text-brandInk">----</span>
+                    </div>
+                    <div class="bg-brandCream p-3 rounded-lg border-2 border-brandInk col-span-2 sm:col-span-1">
+                        <span class="block text-[11px] font-black text-neutral-500 uppercase">PIN / Patrón</span>
+                        <span id="detail-pin" class="font-bold text-brandInk">Sin clave</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-2 pt-1">
+                    <span id="detail-badge-chip" class="text-xs font-extrabold px-3 py-1 rounded-full border-2 border-brandInk bg-white">
+                        Chip: No
+                    </span>
+                    <span id="detail-badge-forro" class="text-xs font-extrabold px-3 py-1 rounded-full border-2 border-brandInk bg-white">
+                        Forro: No
+                    </span>
+                    <span id="detail-badge-sd" class="text-xs font-extrabold px-3 py-1 rounded-full border-2 border-brandInk bg-white">
+                        MicroSD: No
+                    </span>
+                    <span id="detail-badge-cargador" class="text-xs font-extrabold px-3 py-1 rounded-full border-2 border-brandInk bg-white">
+                        Cargador: No
+                    </span>
+                    <span id="detail-badge-enciende" class="text-xs font-extrabold px-3 py-1 rounded-full border-2 border-brandInk bg-white">
+                        Enciende: No
+                    </span>
+                </div>
+            </div>
+
+            <!-- Control de Pago, Adelanto y Diagnóstico Técnico -->
+            <div class="bg-white border-[3px] border-brandInk rounded-xl p-4 sm:p-5 shadow-brutal space-y-4">
+                <div class="flex items-center justify-between border-b-2 border-neutral-200 pb-2">
+                    <h3 class="text-sm font-black uppercase tracking-wider text-brandInk">
+                        PAGO, ADELANTO Y DIAGNÓSTICO
+                    </h3>
+                    <span id="detail-payment-status-badge" class="text-xs font-black px-2.5 py-0.5 rounded-full border-2 border-brandInk bg-neutral-200">
+                        PENDIENTE
+                    </span>
+                </div>
+
+                <!-- Selector de estado de pago en detalle -->
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-wider text-neutral-600 mb-1.5">
+                        CONDICIÓN DE PAGO
+                    </label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" onclick="setDetailPaymentStatus('Pendiente')" id="detail-pay-btn-Pendiente" class="border-2 border-brandInk rounded-xl py-2.5 px-2 font-black text-xs sm:text-sm bg-white text-brandInk">
+                            Pendiente
+                        </button>
+                        <button type="button" onclick="setDetailPaymentStatus('Adelanto')" id="detail-pay-btn-Adelanto" class="border-2 border-brandInk rounded-xl py-2.5 px-2 font-black text-xs sm:text-sm bg-white text-brandInk">
+                            Adelanto
+                        </button>
+                        <button type="button" onclick="setDetailPaymentStatus('Pagado')" id="detail-pay-btn-Pagado" class="border-2 border-brandInk rounded-xl py-2.5 px-2 font-black text-xs sm:text-sm bg-white text-brandInk">
+                            Pagado
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Montos editables en detalle -->
+                <div class="grid grid-cols-3 gap-2.5">
+                    <div class="bg-brandCream border-2 border-brandInk rounded-xl p-2.5">
+                        <label for="detail-final-cost" class="block text-[10px] sm:text-xs font-black uppercase text-neutral-600 mb-0.5">
+                            COSTO TOTAL (<span class="currency-symbol">S/</span>)
+                        </label>
+                        <input type="number" step="0.01" min="0" id="detail-final-cost" oninput="recalculateDetailPayment()" placeholder="0.00" class="w-full bg-transparent font-mono text-base sm:text-lg font-black text-brandInk focus:outline-none">
+                    </div>
+
+                    <div class="bg-brandCream border-2 border-brandInk rounded-xl p-2.5">
+                        <label for="detail-adelanto" class="block text-[10px] sm:text-xs font-black uppercase text-neutral-600 mb-0.5">
+                            ADELANTO (<span class="currency-symbol">S/</span>)
+                        </label>
+                        <input type="number" step="0.01" min="0" id="detail-adelanto" oninput="recalculateDetailPayment('adelanto')" placeholder="0.00" class="w-full bg-transparent font-mono text-base sm:text-lg font-black text-brandInk focus:outline-none">
+                    </div>
+
+                    <div class="bg-neutral-100 border-2 border-brandInk rounded-xl p-2.5 flex flex-col justify-between">
+                        <span class="block text-[10px] sm:text-xs font-black uppercase text-neutral-500">
+                            SALDO RESTA
+                        </span>
+                        <div id="detail-saldo-display" class="font-mono text-base sm:text-lg font-black text-brandOrange">
+                            S/ 0.00
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botón rápido para liquidar saldo si queda pendiente -->
+                <button type="button" id="btn-liquidar-saldo" onclick="liquidarSaldoDetail()" class="hidden w-full bg-brandGreen hover:opacity-90 text-white font-black text-xs sm:text-sm py-2.5 px-4 rounded-xl border-2 border-brandInk shadow-brutal-sm btn-brutal">
+                    ✓ Marcar Saldo Completado (100% Pagado)
+                </button>
+
+                <div>
+                    <label for="detail-tech-notes" class="block text-xs font-black uppercase tracking-wider text-neutral-600 mb-1">
+                        NOTAS INTERNAS DEL TÉCNICO / REPUESTOS USADOS
+                    </label>
+                    <textarea id="detail-tech-notes" rows="3" placeholder="Ej. Se cambió pin de carga y se realizó limpieza ultrasónica..." class="w-full bg-brandCream border-2 border-brandInk rounded-xl p-3 text-sm font-semibold focus:outline-none focus:bg-white"></textarea>
+                </div>
+
+                <button onclick="saveOrderTechnicalDetails()" class="w-full bg-brandInk hover:bg-neutral-800 text-white font-black text-sm sm:text-base py-3.5 px-5 rounded-xl border-2 border-brandInk shadow-brutal btn-brutal uppercase tracking-wide">
+                    Guardar Pagos y Notas Técnicas
+                </button>
+            </div>
+
+            <!-- Fotos de cómo llegó (Ilimitadas) -->
+            <div id="detail-photos-card" class="bg-white border-[3px] border-brandInk rounded-xl p-4 sm:p-5 shadow-brutal space-y-3">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-sm font-black uppercase tracking-wider text-brandInk">
+                            FOTOS DEL EQUIPO
+                        </h3>
+                        <span id="detail-photo-count" class="bg-brandInk text-white font-mono text-xs font-black px-2 py-0.5 rounded">
+                            0
+                        </span>
+                    </div>
+                    <label for="detail-add-photos" class="cursor-pointer bg-brandCream hover:bg-neutral-200 text-brandInk font-extrabold text-xs px-3 py-1.5 rounded-lg border-2 border-brandInk shadow-brutal-sm btn-brutal">
+                        + Agregar más fotos
+                    </label>
+                    <input type="file" id="detail-add-photos" accept="image/*" multiple class="hidden" onchange="handleDetailPhotoUpload(event)">
+                </div>
+                <div id="detail-photos-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <!-- Fotos ampliables -->
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ========================================================= -->
+    <!-- MODAL DE CONFIGURACIÓN DEL TALLER Y RESPALDO JSON         -->
+    <!-- ========================================================= -->
+    <div id="settings-modal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 no-print">
+        <div class="bg-white border-[3px] border-brandInk rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-brutal-lg space-y-5 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b-2 border-brandInk pb-3">
+                <h3 class="text-lg font-black uppercase tracking-tight">Ajustes del Taller</h3>
+                <button onclick="closeSettingsModal()" class="w-8 h-8 rounded-lg border-2 border-brandInk font-black hover:bg-neutral-100">✕</button>
+            </div>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-wider text-neutral-600 mb-1">Nombre del Taller</label>
+                    <input type="text" id="settings-shop-name" class="w-full border-2 border-brandInk rounded-xl px-3.5 py-2.5 font-extrabold text-base">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-wider text-neutral-600 mb-1">Dirección / Teléfono en Recibo (Opcional)</label>
+                    <input type="text" id="settings-shop-subinfo" placeholder="Ej. Av. Sáenz Peña 123, Callao • Tel: 999-888-777" class="w-full border-2 border-brandInk rounded-xl px-3.5 py-2.5 font-bold text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-wider text-neutral-600 mb-1">Símbolo de Moneda</label>
+                    <select id="settings-currency" class="w-full border-2 border-brandInk rounded-xl px-3.5 py-2.5 font-extrabold text-base bg-white">
+                        <option value="S/">Soles (S/)</option>
+                        <option value="$">Dólares / Pesos ($)</option>
+                        <option value="€">Euros (€)</option>
+                        <option value="RD$">Pesos Dominicanos (RD$)</option>
+                        <option value="Bs">Bolívares (Bs)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-wider text-neutral-600 mb-1">Código de Taller (Para sincronizar tus dispositivos)</label>
+                    <input type="text" id="settings-workshop-code" placeholder="Ej. tallergomez2026" class="w-full border-2 border-brandInk rounded-xl px-3.5 py-2.5 font-mono font-extrabold text-sm uppercase">
+                    <p class="text-[11px] font-semibold text-neutral-500 mt-1">Usa el mismo código en tu PC y celular para ver las mismas órdenes al instante.</p>
+                </div>
+
+                <button onclick="saveSettings()" class="w-full bg-brandOrange text-white font-black py-3 rounded-xl border-2 border-brandInk shadow-brutal-sm btn-brutal">
+                    Guardar Ajustes y Sincronizar
+                </button>
+            </div>
+
+            <!-- Conexión con tu propio Firebase al subir a GitHub -->
+            <div class="border-t-2 border-dashed border-neutral-300 pt-4 space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-black uppercase tracking-wider text-brandOrange">CONEXIÓN NUBE PROPIA (GITHUB PAGES)</p>
+                    <span id="modal-cloud-mode" class="text-[10px] font-mono font-black px-2 py-0.5 rounded bg-neutral-100 border border-brandInk">ACTIVO</span>
+                </div>
+                <p class="text-[11px] font-semibold text-neutral-600 leading-snug">
+                    Cuando subas este archivo como <code class="font-mono bg-neutral-100 px-1">index.html</code> a GitHub, pega aquí la configuración de tu proyecto web de Google (firebaseConfig) para que guarde gratis en tu nube:
+                </p>
+                <textarea id="settings-firebase-config" rows="4" placeholder='{"apiKey":"AIza...","authDomain":"tu-app.firebaseapp.com","projectId":"tu-app","storageBucket":"tu-app.appspot.com","messagingSenderId":"123","appId":"1:123:web:abc"}' class="w-full border-2 border-brandInk rounded-xl p-2.5 font-mono text-[11px] bg-brandCream focus:outline-none"></textarea>
+                <button type="button" onclick="saveExternalFirebaseConfig()" class="w-full bg-brandInk text-white font-extrabold py-2.5 rounded-xl border-2 border-brandInk text-xs uppercase tracking-wider">
+                    Conectar Nube Externa
+                </button>
+            </div>
+
+            <!-- Respaldo de datos -->
+            <div class="border-t-2 border-dashed border-neutral-300 pt-4 space-y-2.5">
+                <p class="text-xs font-black uppercase tracking-wider text-neutral-500">COPIA DE SEGURIDAD COMPLETA (CON FOTOS)</p>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <button onclick="exportBackupJSON()" class="bg-brandCream hover:bg-neutral-200 border-2 border-brandInk py-2.5 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5">
+                        ⬇️ Exportar JSON
+                    </button>
+                    <label class="cursor-pointer bg-brandCream hover:bg-neutral-200 border-2 border-brandInk py-2.5 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5">
+                        ⬆️ Importar JSON
+                        <input type="file" accept=".json" class="hidden" onchange="importBackupJSON(event)">
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PARA VER FOTO EN GRANDE -->
+    <div id="photo-lightbox" onclick="closePhotoLightbox()" class="hidden fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 cursor-zoom-out no-print">
+        <img id="lightbox-img" src="" alt="Vista previa" class="max-w-full max-h-[85vh] rounded-xl border-4 border-white shadow-2xl">
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- LÓGICA DE LA APLICACIÓN (JAVASCRIPT + INDEXEDDB)          -->
+    <!-- ========================================================= -->
+    <!-- LÓGICA DE LA APLICACIÓN (HORA PERÚ + NUBE EN TIEMPO REAL) -->
+    <!-- ========================================================= -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Zona horaria oficial de Perú
+        const PERU_TZ = 'America/Lima';
+
+        // Claves y configuración de IndexedDB (Caché offline y soporte de fotos pesadas)
+        const DB_NAME = 'TallerRecepcionDB_v2';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'app_data';
+        const LEGACY_ORDERS_KEY = 'taller_recepcion_orders_v1';
+        const LEGACY_SETTINGS_KEY = 'taller_recepcion_settings_v1';
+        const LEGACY_COUNTER_KEY = 'taller_recepcion_counter_v1';
+
+        let dbInstance = null;
+
+        // Variables de sincronización en la nube
+        const defaultAppId = typeof __app_id !== 'undefined' ? __app_id : 'taller-peru-app';
+        let fbApp = null;
+        let fbAuth = null;
+        let fbDb = null;
+        let fbUser = null;
+        let unsubscribeOrders = null;
+        let unsubscribeMeta = null;
+        let cloudConnected = false;
+
+        // Estado global de la aplicación
+        let state = {
+            orders: [],
+            settings: {
+                shopName: 'Taller Gómez',
+                shopSubinfo: '',
+                currency: 'S/',
+                workshopCode: 'TALLER01'
+            },
+            orderCounter: 1,
+            currentFilter: 'TODOS',
+            selectedOrderId: null,
+            formAccessories: {
+                chip: false,
+                forro: false,
+                sd: false,
+                cargador: false,
+                enciende: false
+            },
+            formPaymentStatus: 'Pendiente',
+            detailPaymentStatus: 'Pendiente',
+            formPhotos: []
+        };
+
+        let pendingDeleteId = null;
+        let deleteConfirmTimeout = null;
+
+        // =========================================================
+        // RELOJ Y FORMATEO EN HORA EXACTA DE PERÚ (America/Lima)
+        // =========================================================
+        function getPeruDateString(dateInput = new Date()) {
+            const d = new Date(dateInput);
+            return new Intl.DateTimeFormat('es-PE', {
+                timeZone: PERU_TZ,
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            }).format(d);
+        }
+
+        function getPeruDateTimeString(dateInput = new Date()) {
+            const d = new Date(dateInput);
+            const fecha = new Intl.DateTimeFormat('es-PE', {
+                timeZone: PERU_TZ,
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            }).format(d);
+            const hora = new Intl.DateTimeFormat('es-PE', {
+                timeZone: PERU_TZ,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            }).format(d);
+            return `${fecha} ${hora}`;
+        }
+
+        function updateDateHeader() {
+            const now = new Date();
+            const weekday = new Intl.DateTimeFormat('es-PE', { timeZone: PERU_TZ, weekday: 'short' }).format(now);
+            const dateStr = getPeruDateString(now);
+            const timeStr = new Intl.DateTimeFormat('es-PE', {
+                timeZone: PERU_TZ,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            }).format(now);
+
+            const badge = document.getElementById('current-date-badge');
+            if (badge) {
+                badge.textContent = `${weekday.toUpperCase()} ${dateStr} • ${timeStr} PE`;
+            }
+        }
+
+        // Actualizar reloj de Perú cada segundo
+        setInterval(updateDateHeader, 1000);
+
+        // =========================================================
+        // INDEXEDDB LOCAL (RESPALDO OFFLINE)
+        // =========================================================
+        function initIndexedDB() {
+            return new Promise((resolve) => {
+                if (!window.indexedDB) {
+                    resolve(null);
+                    return;
+                }
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME, { keyPath: 'key' });
+                    }
+                };
+                request.onsuccess = (e) => {
+                    dbInstance = e.target.result;
+                    resolve(dbInstance);
+                };
+                request.onerror = () => resolve(null);
+            });
+        }
+
+        function idbGet(key) {
+            return new Promise((resolve) => {
+                if (!dbInstance) return resolve(null);
+                try {
+                    const tx = dbInstance.transaction(STORE_NAME, 'readonly');
+                    const store = tx.objectStore(STORE_NAME);
+                    const req = store.get(key);
+                    req.onsuccess = () => resolve(req.result ? req.result.value : null);
+                    req.onerror = () => resolve(null);
+                } catch (e) {
+                    resolve(null);
+                }
+            });
+        }
+
+        function idbSet(key, value) {
+            return new Promise((resolve) => {
+                if (!dbInstance) return resolve(false);
+                try {
+                    const tx = dbInstance.transaction(STORE_NAME, 'readwrite');
+                    const store = tx.objectStore(STORE_NAME);
+                    store.put({ key, value });
+                    tx.oncomplete = () => resolve(true);
+                    tx.onerror = () => resolve(false);
+                } catch (e) {
+                    resolve(false);
+                }
+            });
+        }
+
+        // =========================================================
+        // CONEXIÓN Y SINCRONIZACIÓN EN LA NUBE (FIRESTORE)
+        // =========================================================
+        function updateCloudStatusUI(status, text) {
+            const dot = document.getElementById('cloud-status-dot');
+            const label = document.getElementById('cloud-status-text');
+            if (!dot || !label) return;
+
+            label.textContent = text;
+            if (status === 'online') {
+                dot.className = 'w-2.5 h-2.5 rounded-full bg-brandGreen animate-pulse';
+            } else if (status === 'syncing') {
+                dot.className = 'w-2.5 h-2.5 rounded-full bg-brandYellow animate-ping';
+            } else {
+                dot.className = 'w-2.5 h-2.5 rounded-full bg-red-500';
+            }
+        }
+
+        function sanitizeWorkshopCode(code) {
+            return (code || 'TALLER01').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '') || 'TALLER01';
+        }
+
+        async function initCloudSync() {
+            try {
+                let configObj = null;
+                if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                    configObj = JSON.parse(__firebase_config);
+                } else {
+                    const externalCfg = await idbGet('external_firebase_config');
+                    if (externalCfg) configObj = externalCfg;
+                }
+
+                if (!configObj || !configObj.apiKey) {
+                    updateCloudStatusUI('offline', 'Solo Local (Configura Nube)');
+                    return;
+                }
+
+                fbApp = initializeApp(configObj);
+                fbAuth = getAuth(fbApp);
+                fbDb = getFirestore(fbApp);
+
+                // Regla 3: Autenticar ANTES de cualquier consulta
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(fbAuth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(fbAuth);
+                }
+
+                fbUser = fbAuth.currentUser;
+                if (!fbUser) {
+                    updateCloudStatusUI('offline', 'Sin sesión nube');
+                    return;
+                }
+
+                cloudConnected = true;
+                subscribeToWorkshopData();
+            } catch (err) {
+                console.error('Error iniciando nube:', err);
+                updateCloudStatusUI('offline', 'Modo Local');
+            }
+        }
+
+        function subscribeToWorkshopData() {
+            if (!fbDb || !fbUser) return;
+
+            if (unsubscribeOrders) unsubscribeOrders();
+            if (unsubscribeMeta) unsubscribeMeta();
+
+            const wCode = sanitizeWorkshopCode(state.settings.workshopCode);
+            updateCloudStatusUI('syncing', `Nube (${wCode})`);
+
+            // Ruta estricta según reglas: /artifacts/{appId}/public/data/{collectionName}
+            const ordersCollectionRef = collection(fbDb, 'artifacts', defaultAppId, 'public', 'data', `orders_${wCode}`);
+            const metaDocRef = doc(fbDb, 'artifacts', defaultAppId, 'public', 'data', 'workshops_meta', wCode);
+
+            // Escuchar metadatos del taller (nombre, moneda, correlativo)
+            unsubscribeMeta = onSnapshot(metaDocRef, async (snap) => {
+                if (snap.exists()) {
+                    const data = snap.data();
+                    if (data.shopName) state.settings.shopName = data.shopName;
+                    if (data.shopSubinfo !== undefined) state.settings.shopSubinfo = data.shopSubinfo;
+                    if (data.currency) state.settings.currency = data.currency;
+                    if (data.orderCounter && data.orderCounter > state.orderCounter) {
+                        state.orderCounter = data.orderCounter;
+                    }
+                    await idbSet('settings', state.settings);
+                    await idbSet('counter', state.orderCounter);
+                    applySettingsUI();
+                } else {
+                    // Inicializar metadatos en la nube si es un taller nuevo
+                    await syncMetaToCloud();
+                }
+            }, (error) => {
+                console.error('Error leyendo metadatos nube:', error);
+            });
+
+            // Escuchar órdenes en tiempo real
+            unsubscribeOrders = onSnapshot(ordersCollectionRef, async (snapshot) => {
+                const cloudOrders = [];
+                snapshot.forEach((docSnap) => {
+                    const ord = docSnap.data();
+                    if (typeof ord.photosJson === 'string') {
+                        try { ord.photos = JSON.parse(ord.photosJson); } catch { ord.photos = []; }
+                    } else if (!Array.isArray(ord.photos)) {
+                        ord.photos = [];
+                    }
+                    cloudOrders.push(ord);
+                });
+
+                // Si la nube aún está vacía pero tenemos datos locales recién creados, subirlos
+                if (cloudOrders.length === 0 && state.orders.length > 0) {
+                    for (const localOrd of state.orders) {
+                        await syncOrderToCloud(localOrd);
+                    }
+                } else {
+                    state.orders = cloudOrders;
+                    // Asegurar que el correlativo siempre sea mayor al máximo existente
+                    const maxNum = state.orders.reduce((max, o) => Math.max(max, parseInt(o.number, 10) || 0), 0);
+                    if (maxNum >= state.orderCounter) {
+                        state.orderCounter = maxNum + 1;
+                    }
+                    await idbSet('orders', state.orders);
+                    await idbSet('counter', state.orderCounter);
+                }
+
+                updateCloudStatusUI('online', `Nube • ${wCode}`);
+                renderDashboard();
+
+                // Si estamos viendo el detalle de una orden, refrescarla
+                if (!document.getElementById('view-detail').classList.contains('hidden') && state.selectedOrderId) {
+                    const current = state.orders.find(o => o.id === state.selectedOrderId);
+                    if (current) renderDetailPhotos(current);
+                }
+            }, (error) => {
+                console.error('Error sincronizando órdenes:', error);
+                updateCloudStatusUI('offline', 'Error de red');
+            });
+        }
+
+        async function syncOrderToCloud(order) {
+            if (!fbDb || !fbUser) return;
+            try {
+                const wCode = sanitizeWorkshopCode(state.settings.workshopCode);
+                const orderDocRef = doc(fbDb, 'artifacts', defaultAppId, 'public', 'data', `orders_${wCode}`, order.id);
+                const payload = {
+                    ...order,
+                    photosJson: JSON.stringify(order.photos || []),
+                    updatedAt: new Date().toISOString()
+                };
+                delete payload.photos;
+                await setDoc(orderDocRef, payload);
+            } catch (err) {
+                console.error('Error subiendo orden a la nube:', err);
+                showToast('Guardado local (sin conexión a nube)', 'error');
+            }
+        }
+
+        async function deleteOrderFromCloud(orderId) {
+            if (!fbDb || !fbUser) return;
+            try {
+                const wCode = sanitizeWorkshopCode(state.settings.workshopCode);
+                const orderDocRef = doc(fbDb, 'artifacts', defaultAppId, 'public', 'data', `orders_${wCode}`, orderId);
+                await deleteDoc(orderDocRef);
+            } catch (err) {
+                console.error('Error eliminando en nube:', err);
+            }
+        }
+
+        async function syncMetaToCloud() {
+            if (!fbDb || !fbUser) return;
+            try {
+                const wCode = sanitizeWorkshopCode(state.settings.workshopCode);
+                const metaDocRef = doc(fbDb, 'artifacts', defaultAppId, 'public', 'data', 'workshops_meta', wCode);
+                await setDoc(metaDocRef, {
+                    shopName: state.settings.shopName,
+                    shopSubinfo: state.settings.shopSubinfo || '',
+                    currency: state.settings.currency,
+                    orderCounter: state.orderCounter,
+                    updatedAt: new Date().toISOString()
+                }, { merge: true });
+            } catch (err) {
+                console.error('Error subiendo ajustes a la nube:', err);
+            }
+        }
+
+        // =========================================================
+        // INICIALIZACIÓN GENERAL
+        // =========================================================
+        document.addEventListener('DOMContentLoaded', async () => {
+            updateDateHeader();
+            await initIndexedDB();
+            await loadFromStorage();
+            applySettingsUI();
+            renderDashboard();
+            await initCloudSync();
+        });
+
+        async function loadFromStorage() {
+            try {
+                let savedOrders = await idbGet('orders');
+                let savedSettings = await idbGet('settings');
+                let savedCounter = await idbGet('counter');
+
+                if (!savedOrders && localStorage.getItem(LEGACY_ORDERS_KEY)) {
+                    savedOrders = JSON.parse(localStorage.getItem(LEGACY_ORDERS_KEY));
+                    savedSettings = JSON.parse(localStorage.getItem(LEGACY_SETTINGS_KEY) || '{}');
+                    savedCounter = parseInt(localStorage.getItem(LEGACY_COUNTER_KEY) || '1', 10);
+                }
+
+                if (savedOrders) state.orders = savedOrders;
+                if (savedSettings) state.settings = { ...state.settings, ...savedSettings };
+                if (savedCounter) state.orderCounter = parseInt(savedCounter, 10) || 1;
+            } catch (e) {
+                console.error('Error cargando datos:', e);
+            }
+        }
+
+        async function saveToStorage(changedOrder = null) {
+            await idbSet('orders', state.orders);
+            await idbSet('settings', state.settings);
+            await idbSet('counter', state.orderCounter);
+
+            if (changedOrder) {
+                await syncOrderToCloud(changedOrder);
+            }
+            await syncMetaToCloud();
+        }
+
+        // Navegación entre vistas
+        function navigateTo(viewName) {
+            const views = ['dashboard', 'new-order', 'receipt', 'detail'];
+            views.forEach(v => {
+                document.getElementById(`view-${v}`).classList.add('hidden');
+            });
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (viewName === 'dashboard') {
+                renderDashboard();
+            } else if (viewName === 'new-order') {
+                resetNewOrderForm();
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgColor = type === 'error' ? 'bg-red-600 text-white' : 'bg-brandInk text-white';
+            
+            toast.className = `${bgColor} border-2 border-brandInk px-4 py-3 rounded-xl shadow-brutal font-bold text-sm flex items-center gap-2 transform transition-all duration-200 translate-y-2 opacity-0`;
+            toast.innerHTML = `<span>${type === 'error' ? '⚠️' : '✅'}</span><span>${message}</span>`;
+            
+            container.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 200);
+            }, 3000);
+        }
+
+        function applySettingsUI() {
+            document.getElementById('header-shop-name').textContent = state.settings.shopName;
+            document.getElementById('dashboard-shop-title').textContent = state.settings.shopName;
+            document.querySelectorAll('.currency-symbol').forEach(el => {
+                el.textContent = state.settings.currency;
+            });
+        }
+
+        // =========================================================
+        // DASHBOARD Y LISTA DE ÓRDENES
+        // =========================================================
+        function getOrderFinancials(order) {
+            const costo = parseFloat(order.costo) || 0;
+            let adelanto = parseFloat(order.adelanto) || 0;
+            const pStatus = order.paymentStatus || (costo > 0 && adelanto >= costo ? 'Pagado' : (adelanto > 0 ? 'Adelanto' : 'Pendiente'));
+
+            if (pStatus === 'Pagado' && costo > 0 && adelanto === 0) {
+                adelanto = costo;
+            }
+            const saldo = Math.max(0, costo - adelanto);
+            return { costo, adelanto, saldo, pStatus };
+        }
+
+        function renderDashboard() {
+            const todayPeruStr = getPeruDateString(new Date());
+            const todayOrders = state.orders.filter(o => getPeruDateString(o.createdAt) === todayPeruStr);
+            const revisionCount = state.orders.filter(o => o.status === 'En revisión').length;
+            const listoCount = state.orders.filter(o => o.status === 'Listo').length;
+            const deliveredCount = state.orders.filter(o => o.status === 'Entregado').length;
+            const unpaidCount = state.orders.filter(o => getOrderFinancials(o).pStatus !== 'Pagado').length;
+
+            document.getElementById('today-count').textContent = `${todayOrders.length} ${todayOrders.length === 1 ? 'equipo' : 'equipos'}`;
+            document.getElementById('count-revision').textContent = revisionCount;
+            document.getElementById('count-listo').textContent = listoCount;
+            document.getElementById('pill-count-all').textContent = state.orders.length;
+            document.getElementById('pill-count-delivered').textContent = deliveredCount;
+            document.getElementById('pill-count-unpaid').textContent = unpaidCount;
+
+            updateFilterPillsUI();
+            renderOrdersList();
+        }
+
+        function setFilter(filter) {
+            state.currentFilter = filter;
+            updateFilterPillsUI();
+            renderOrdersList();
+        }
+
+        function clearSearch() {
+            const input = document.getElementById('search-input');
+            if (input) input.value = '';
+            renderOrdersList();
+        }
+
+        function updateFilterPillsUI() {
+            document.querySelectorAll('.filter-pill').forEach(btn => {
+                const isSelected = btn.getAttribute('data-filter') === state.currentFilter;
+                if (isSelected) {
+                    btn.className = 'filter-pill bg-brandInk text-white border-2 border-brandInk px-3.5 py-1.5 rounded-lg text-xs font-extrabold whitespace-nowrap';
+                } else {
+                    btn.className = 'filter-pill bg-white text-brandInk border-2 border-brandInk px-3.5 py-1.5 rounded-lg text-xs font-extrabold whitespace-nowrap';
+                }
+            });
+        }
+
+        function renderOrdersList() {
+            const listContainer = document.getElementById('orders-list');
+            const searchInput = document.getElementById('search-input');
+            const clearBtn = document.getElementById('clear-search-btn');
+            if (!listContainer) return;
+
+            const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+            if (clearBtn) {
+                clearBtn.classList.toggle('hidden', query.length === 0);
+            }
+
+            let filtered = state.orders.filter(o => {
+                const fin = getOrderFinancials(o);
+                if (state.currentFilter === 'En revisión' && o.status !== 'En revisión') return false;
+                if (state.currentFilter === 'Listo' && o.status !== 'Listo') return false;
+                if (state.currentFilter === 'Entregado' && o.status !== 'Entregado') return false;
+                if (state.currentFilter === 'CON_SALDO' && fin.pStatus === 'Pagado') return false;
+                if (state.currentFilter === 'PAGADOS' && fin.pStatus !== 'Pagado') return false;
+
+                if (!query) return true;
+                const haystack = [
+                    o.number,
+                    o.cliente,
+                    o.dni,
+                    o.telefono,
+                    o.ubicacion,
+                    o.equipo,
+                    o.falla,
+                    o.imei
+                ].filter(Boolean).join(' ').toLowerCase();
+                return haystack.includes(query);
+            });
+
+            if (filtered.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="bg-white border-[3px] border-brandInk rounded-xl p-8 text-center shadow-brutal-sm">
+                        <p class="font-black text-base text-brandInk">No hay órdenes en esta vista</p>
+                        <p class="text-xs font-semibold text-neutral-500 mt-1">Presiona "+ NUEVA ORDEN" para registrar un celular.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const sym = state.settings.currency || 'S/';
+            listContainer.innerHTML = filtered.map(o => {
+                const fin = getOrderFinancials(o);
+                let statusBadge = 'bg-brandYellow text-brandInk';
+                if (o.status === 'Listo') statusBadge = 'bg-brandGreen text-white';
+                if (o.status === 'Entregado') statusBadge = 'bg-neutral-200 text-neutral-700';
+
+                let payBadge = 'bg-neutral-100 text-neutral-700';
+                let payText = 'Pendiente';
+                if (fin.pStatus === 'Pagado') {
+                    payBadge = 'bg-emerald-100 text-emerald-800';
+                    payText = `Pagado (${sym}${fin.costo.toFixed(2)})`;
+                } else if (fin.pStatus === 'Adelanto') {
+                    payBadge = 'bg-amber-100 text-amber-900';
+                    payText = `Adelanto • Resta ${sym}${fin.saldo.toFixed(2)}`;
+                } else if (fin.costo > 0) {
+                    payText = `Debe ${sym}${fin.saldo.toFixed(2)}`;
+                }
+
+                const photoCount = Array.isArray(o.photos) ? o.photos.length : 0;
+
+                return `
+                    <div onclick="openOrderDetail('${o.id}')" class="cursor-pointer bg-white hover:bg-neutral-50 border-[3px] border-brandInk rounded-xl p-4 shadow-brutal-sm btn-brutal space-y-2.5">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-mono text-xs font-black bg-brandInk text-white px-2 py-0.5 rounded">Nº ${o.number}</span>
+                                    <span class="text-xs font-black px-2.5 py-0.5 rounded-full border-2 border-brandInk ${statusBadge}">${o.status}</span>
+                                    <span class="text-[11px] font-extrabold px-2 py-0.5 rounded-md border border-brandInk ${payBadge}">${payText}</span>
+                                </div>
+                                <h3 class="text-base sm:text-lg font-black text-brandInk mt-1.5">${o.equipo} • <span class="font-bold text-neutral-700">${o.cliente}</span></h3>
+                            </div>
+                            ${o.status === 'En revisión' ? `
+                                <button type="button" onclick="event.stopPropagation(); quickMarkReady('${o.id}')" class="bg-brandGreen hover:opacity-90 text-white font-black text-xs px-2.5 py-1.5 rounded-lg border-2 border-brandInk shadow-brutal-sm shrink-0">
+                                    ✓ Listo
+                                </button>
+                            ` : ''}
+                        </div>
+                        <div class="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-neutral-600 pt-1 border-t border-dashed border-neutral-300">
+                            <span class="text-brandOrange font-extrabold">Falla: ${o.falla}</span>
+                            <div class="flex items-center gap-2">
+                                ${o.ubicacion ? `<span>📍 ${o.ubicacion}</span>` : ''}
+                                ${photoCount > 0 ? `<span>📷 ${photoCount}</span>` : ''}
+                                <span class="font-mono text-[11px] text-neutral-500">${getPeruDateTimeString(o.createdAt)}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function quickMarkReady(orderId) {
+            const order = state.orders.find(o => o.id === orderId);
+            if (order) {
+                order.status = 'Listo';
+                await saveToStorage(order);
+                renderDashboard();
+                showToast(`Orden Nº ${order.number} marcada como LISTA`);
+            }
+        }
+
+        // =========================================================
+        // FORMULARIO DE NUEVA ORDEN
+        // =========================================================
+        function resetNewOrderForm() {
+            const form = document.getElementById('new-order-form');
+            if (form) form.reset();
+
+            state.formAccessories = {
+                chip: false,
+                forro: false,
+                sd: false,
+                cargador: false,
+                enciende: false
+            };
+            ['chip', 'forro', 'sd', 'cargador', 'enciende'].forEach(updateAccessoryCardUI);
+
+            state.formPhotos = [];
+            renderFormPhotos();
+
+            state.formPaymentStatus = 'Pendiente';
+            setFormPaymentStatus('Pendiente');
+            recalculateFormPayment();
+        }
+
+        function selectQuickFault(faultText) {
+            const input = document.getElementById('input-falla');
+            if (input) {
+                input.value = faultText;
+                input.focus();
+            }
+        }
+
+        function toggleAccessory(key) {
+            state.formAccessories[key] = !state.formAccessories[key];
+            updateAccessoryCardUI(key);
+        }
+
+        function updateAccessoryCardUI(key) {
+            const active = state.formAccessories[key];
+            const card = document.getElementById(`toggle-card-${key}`);
+            const label = document.getElementById(`label-${key}`);
+            const circle = document.getElementById(`check-circle-${key}`);
+            const icon = document.getElementById(`check-icon-${key}`);
+            if (!card || !label || !circle || !icon) return;
+
+            if (active) {
+                card.classList.add('bg-orange-50');
+                label.textContent = key === 'enciende' ? 'Sí enciende' : 'Sí trae';
+                label.className = 'text-sm font-black text-brandOrange';
+                circle.className = 'w-8 h-8 rounded-full border-[3px] border-brandInk flex items-center justify-center bg-brandOrange transition-colors';
+                icon.classList.remove('hidden');
+            } else {
+                card.classList.remove('bg-orange-50');
+                label.textContent = key === 'enciende' ? 'Apagado' : 'No trae';
+                label.className = 'text-sm font-bold text-neutral-400';
+                circle.className = 'w-8 h-8 rounded-full border-[3px] border-brandInk flex items-center justify-center bg-white transition-colors';
+                icon.classList.add('hidden');
+            }
+        }
+
+        function setFormPaymentStatus(status) {
+            state.formPaymentStatus = status;
+            ['Pendiente', 'Adelanto', 'Pagado'].forEach(st => {
+                const btn = document.getElementById(`form-pay-btn-${st}`);
+                if (!btn) return;
+                if (st === status) {
+                    btn.className = 'border-2 border-brandInk rounded-xl py-2.5 px-2 font-black text-xs sm:text-sm bg-brandInk text-white shadow-brutal-sm';
+                } else {
+                    btn.className = 'border-2 border-brandInk rounded-xl py-2.5 px-2 font-black text-xs sm:text-sm bg-brandCream text-brandInk';
+                }
+            });
+
+            const costoInput = document.getElementById('input-costo');
+            const adelantoInput = document.getElementById('input-adelanto');
+            if (costoInput && adelantoInput) {
+                const costo = parseFloat(costoInput.value) || 0;
+                if (status === 'Pagado' && costo > 0) {
+                    adelantoInput.value = costo.toFixed(2);
+                } else if (status === 'Pendiente') {
+                    adelantoInput.value = '';
+                }
+            }
+            recalculateFormPayment();
+        }
+
+        function recalculateFormPayment(source = '') {
+            const sym = state.settings.currency || 'S/';
+            const costo = parseFloat(document.getElementById('input-costo')?.value) || 0;
+            let adelanto = parseFloat(document.getElementById('input-adelanto')?.value) || 0;
+
+            if (source === 'adelanto' && adelanto > 0 && state.formPaymentStatus === 'Pendiente') {
+                state.formPaymentStatus = 'Adelanto';
+                ['Pendiente', 'Adelanto', 'Pagado'].forEach(st => {
+                    const btn = document.getElementById(`form-pay-btn-${st}`);
+                    if (btn) {
+                        btn.className = st === 'Adelanto'
+                            ? 'border-2 border-brandInk rounded-xl py-2.5 px-2 font-black text-xs sm:text-sm bg-brandInk text-white shadow-brutal-sm'
+                            : 'border-2 border-brandInk rounded-xl py-2.5 px-2 font-black text-xs sm:text-sm bg-brandCream text-brandInk';
+                    }
+                });
+            }
+
+            if (state.formPaymentStatus === 'Pagado' && costo > 0) {
+                adelanto = costo;
+            }
+
+            const saldo = Math.max(0, costo - adelanto);
+            const saldoDisplay = document.getElementById('form-saldo-display');
+            if (saldoDisplay) saldoDisplay.textContent = `${sym} ${saldo.toFixed(2)}`;
+
+            const badge = document.getElementById('form-payment-badge');
+            if (badge) {
+                badge.textContent = state.formPaymentStatus.toUpperCase();
+                if (state.formPaymentStatus === 'Pagado') {
+                    badge.className = 'text-xs font-black px-2.5 py-0.5 rounded-full border-2 border-brandInk bg-brandGreen text-white';
+                } else if (state.formPaymentStatus === 'Adelanto') {
+                    badge.className = 'text-xs font-black px-2.5 py-0.5 rounded-full border-2 border-brandInk bg-brandYellow text-brandInk';
+                } else {
+                    badge.className = 'text-xs font-black px-2.5 py-0.5 rounded-full border-2 border-brandInk bg-neutral-200 text-brandInk';
+                }
+            }
+        }
+
+        // Compresión optimizada para nube (permite guardar múltiples fotos en Firestore)
+        function compressImageFile(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_SIZE = 640;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > MAX_SIZE) {
+                                height *= MAX_SIZE / width;
+                                width = MAX_SIZE;
+                            }
+                        } else {
+                            if (height > MAX_SIZE) {
+                                width *= MAX_SIZE / height;
+                                height = MAX_SIZE;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.62));
+                    };
+                    img.onerror = () => resolve(null);
+                    img.src = e.target.result;
+                };
+                reader.onerror = () => resolve(null);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function handlePhotoUpload(event) {
+            const files = Array.from(event.target.files || []);
+            if (!files.length) return;
+
+            for (const file of files) {
+                const dataUrl = await compressImageFile(file);
+                if (dataUrl) state.formPhotos.push(dataUrl);
+            }
+            renderFormPhotos();
+            event.target.value = '';
+        }
+
+        function removeFormPhoto(index) {
+            state.formPhotos.splice(index, 1);
+            renderFormPhotos();
+        }
+
+        function renderFormPhotos() {
+            const grid = document.getElementById('photo-preview-grid');
+            const badge = document.getElementById('form-photo-count-badge');
+            if (badge) {
+                badge.textContent = `${state.formPhotos.length} ${state.formPhotos.length === 1 ? 'foto' : 'fotos'}`;
+            }
+            if (!grid) return;
+
+            grid.innerHTML = state.formPhotos.map((src, idx) => `
+                <div class="relative group border-2 border-brandInk rounded-xl overflow-hidden aspect-square bg-neutral-100">
+                    <img src="${src}" onclick="openPhotoLightbox('${src}')" class="w-full h-full object-cover cursor-zoom-in">
+                    <button type="button" onclick="removeFormPhoto(${idx})" class="absolute top-1.5 right-1.5 bg-red-600 text-white w-6 h-6 rounded-full font-black text-xs border border-brandInk flex items-center justify-center shadow">
+                        ✕
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        async function handleSaveOrder(event) {
+            event.preventDefault();
+
+            const cliente = document.getElementById('input-cliente').value.trim();
+            const dni = document.getElementById('input-dni').value.trim();
+            const telefono = document.getElementById('input-telefono').value.trim();
+            const ubicacion = document.getElementById('input-ubicacion').value.trim();
+            const equipo = document.getElementById('input-equipo').value.trim();
+            const falla = document.getElementById('input-falla').value.trim();
+            const imei = document.getElementById('input-imei').value.trim();
+            const pin = document.getElementById('input-pin').value.trim();
+
+            if (!cliente || !equipo || !falla) {
+                showToast('Completa Cliente, Equipo y Falla', 'error');
+                return;
+            }
+
+            const costo = parseFloat(document.getElementById('input-costo').value) || 0;
+            let adelanto = parseFloat(document.getElementById('input-adelanto').value) || 0;
+            if (state.formPaymentStatus === 'Pagado' && costo > 0) {
+                adelanto = costo;
+            } else if (state.formPaymentStatus === 'Pendiente') {
+                adelanto = 0;
+            }
+
+            const formattedNumber = String(state.orderCounter).padStart(4, '0');
+            const newOrder = {
+                id: 'ord_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                number: formattedNumber,
+                cliente,
+                dni,
+                telefono,
+                ubicacion,
+                equipo,
+                falla,
+                imei,
+                pin,
+                accessories: { ...state.formAccessories },
+                photos: [...state.formPhotos],
+                costo,
+                adelanto,
+                paymentStatus: state.formPaymentStatus,
+                status: 'En revisión',
+                techNotes: '',
+                createdAt: new Date().toISOString()
+            };
+
+            state.orders.unshift(newOrder);
+            state.orderCounter += 1;
+            state.selectedOrderId = newOrder.id;
+            await saveToStorage(newOrder);
+
+            showToast(`Orden Nº ${formattedNumber} guardada y sincronizada`);
+            openReceiptById(newOrder.id);
+        }
+
+        // =========================================================
+        // RECIBO Y ETIQUETA ADHERIBLE (CON HORA EXACTA DE PERÚ)
+        // =========================================================
+        function openReceiptById(orderId) {
+            const order = state.orders.find(o => o.id === orderId);
+            if (!order) return;
+
+            state.selectedOrderId = order.id;
+
+            // Llenar Etiqueta
+            document.getElementById('receipt-tag-shop').textContent = state.settings.shopName;
+            document.getElementById('receipt-tag-number').textContent = `Nº ${order.number}`;
+            document.getElementById('receipt-tag-summary').textContent = `${order.equipo} • ${order.falla}`;
+
+            // Llenar Recibo con hora exacta de Perú
+            const dateFormatted = getPeruDateTimeString(order.createdAt) + ' (PE)';
+
+            document.getElementById('receipt-shop-name').textContent = state.settings.shopName;
+            const subInfoEl = document.getElementById('receipt-shop-subinfo');
+            if (state.settings.shopSubinfo) {
+                subInfoEl.textContent = state.settings.shopSubinfo;
+                subInfoEl.classList.remove('hidden');
+            } else {
+                subInfoEl.classList.add('hidden');
+            }
+
+            document.getElementById('receipt-date').textContent = dateFormatted;
+            document.getElementById('receipt-order-number').textContent = `Orden Nº ${order.number}`;
+            document.getElementById('receipt-cliente').textContent = order.cliente;
+            document.getElementById('receipt-equipo').textContent = order.equipo;
+            document.getElementById('receipt-falla').textContent = order.falla;
+
+            // Filas opcionales
+            const rowDni = document.getElementById('receipt-row-dni');
+            if (order.dni) {
+                rowDni.classList.remove('hidden');
+                document.getElementById('receipt-dni').textContent = order.dni;
+            } else {
+                rowDni.classList.add('hidden');
+            }
+
+            const rowTel = document.getElementById('receipt-row-telefono');
+            if (order.telefono) {
+                rowTel.classList.remove('hidden');
+                document.getElementById('receipt-telefono').textContent = order.telefono;
+            } else {
+                rowTel.classList.add('hidden');
+            }
+
+            const rowUbi = document.getElementById('receipt-row-ubicacion');
+            if (order.ubicacion) {
+                rowUbi.classList.remove('hidden');
+                document.getElementById('receipt-ubicacion').textContent = order.ubicacion;
+            } else {
+                rowUbi.classList.add('hidden');
+            }
+
+            const rowImei = document.getElementById('receipt-row-imei');
+            if (order.imei) {
+                rowImei.classList.remove('hidden');
+                document.getElementById('receipt-imei').textContent = order.imei;
+            } else {
+                rowImei.classList.add('hidden');
+            }
+
+            const acc = order.accessories || {};
+            const accItems = [
+                `Chip: ${acc.chip ? 'Sí' : 'No'}`,
+                `Forro: ${acc.forro ? 'Sí' : 'No'}`,
+                acc.sd ? 'MicroSD: Sí' : null,
+                acc.cargador ? 'Cargador: Sí' : null
+            ].filter(Boolean);
+            document.getElementById('receipt-accessories').textContent = accItems.join(' • ');
+            document.getElementById('receipt-power').textContent = acc.enciende ? 'Encendido' : 'Apagado';
+
+            // Finanzas en recibo
+            const sym = state.settings.currency || 'S/';
+            const fin = getOrderFinancials(order);
+            const pill = document.getElementById('receipt-payment-pill');
+            pill.textContent = fin.pStatus.toUpperCase();
+            if (fin.pStatus === 'Pagado') {
+                pill.className = 'inline-block font-mono text-xs font-black px-3 py-1 rounded-full border-2 border-brandInk bg-brandGreen text-white';
+            } else if (fin.pStatus === 'Adelanto') {
+                pill.className = 'inline-block font-mono text-xs font-black px-3 py-1 rounded-full border-2 border-brandInk bg-brandYellow text-brandInk';
+            } else {
+                pill.className = 'inline-block font-mono text-xs font-black px-3 py-1 rounded-full border-2 border-brandInk bg-neutral-200 text-brandInk';
+            }
+
+            document.getElementById('receipt-costo').textContent = `${sym} ${fin.costo.toFixed(2)}`;
+            document.getElementById('receipt-adelanto').textContent = `${sym} ${fin.adelanto.toFixed(2)}`;
+            document.getElementById('receipt-saldo').textContent = `${sym} ${fin.saldo.toFixed(2)}`;
+
+            // Fotos en recibo
+            const photosSec = document.getElementById('receipt-photos-section');
+            const photosGrid = document.getElementById('receipt-photos-grid');
+            if (Array.isArray(order.photos) && order.photos.length > 0) {
+                photosSec.classList.remove('hidden');
+                photosGrid.innerHTML = order.photos.map(src => `
+                    <img src="${src}" class="w-full h-24 object-cover rounded-lg border-2 border-brandInk">
+                `).join('');
+            } else {
+                photosSec.classList.add('hidden');
+                photosGrid.innerHTML = '';
+            }
+
+            navigateTo('receipt');
+        }
+
+        // =========================================================
+        // VISTA DETALLE Y EDICIÓN DE ORDEN
+        // =========================================================
+        function openOrderDetail(orderId) {
+            const order = state.orders.find(o => o.id === orderId);
+            if (!order) return;
+
+            state.selectedOrderId = order.id;
+
+            document.getElementById('detail-order-number').textContent = `Orden Nº ${order.number}`;
+            document.getElementById('detail-equipo-cliente').textContent = `${order.equipo} • ${order.cliente}`;
+            document.getElementById('detail-date').textContent = getPeruDateTimeString(order.createdAt) + ' (Hora Perú)';
+
+            document.getElementById('detail-falla').textContent = order.falla;
+            document.getElementById('detail-imei').textContent = order.imei || 'No registrado';
+            document.getElementById('detail-dni').textContent = order.dni || 'No registrado';
+            document.getElementById('detail-telefono').textContent = order.telefono || 'No registrado';
+            document.getElementById('detail-ubicacion').textContent = order.ubicacion || 'No registrada';
+            document.getElementById('detail-pin').textContent = order.pin || 'Sin clave';
+
+            const acc = order.accessories || {};
+            setDetailAccBadge('detail-badge-chip', 'Chip', acc.chip);
+            setDetailAccBadge('detail-badge-forro', 'Forro', acc.forro);
+            setDetailAccBadge('detail-badge-sd', 'MicroSD', acc.sd);
+            setDetailAccBadge('detail-badge-cargador', 'Cargador', acc.cargador);
+            setDetailAccBadge('detail-badge-enciende', 'Enciende', acc.enciende);
+
+            updateDetailStatusButtonsUI(order.status);
+
+            const fin = getOrderFinancials(order);
+            document.getElementById('detail-final-cost').value = fin.costo > 0 ? fin.costo : '';
+            document.getElementById('detail-adelanto').value = fin.adelanto > 0 ? fin.adelanto : '';
+            document.getElementById('detail-tech-notes').value = order.techNotes || '';
+            setDetailPaymentStatus(fin.pStatus, false);
+
+            renderDetailPhotos(order);
+            navigateTo('detail');
+        }
+
+        function setDetailAccBadge(elId, label, hasIt) {
+            const el = document.getElementById(elId);
+            if (!el) return;
+            el.textContent = `${label}: ${hasIt ? 'Sí' : 'No'}`;
+            el.className = hasIt
+                ? 'text-xs font-extrabold px-3 py-1 rounded-full border-2 border-brandInk bg-orange-100 text-brandOrange'
+                : 'text-xs font-extrabold px-3 py-1 rounded-full border-2 border-brandInk bg-white text-neutral-500';
+        }
+
+        function updateDetailStatusButtonsUI(status) {
+            const map = {
+                'En revisión': 'status-btn-revision',
+                'Listo': 'status-btn-listo',
+                'Entregado': 'status-btn-entregado'
+            };
+            Object.entries(map).forEach(([st, id]) => {
+                const btn = document.getElementById(id);
+                if (!btn) return;
+                if (st === status) {
+                    const activeColor = st === 'Listo' ? 'bg-brandGreen text-white' : (st === 'En revisión' ? 'bg-brandYellow text-brandInk' : 'bg-brandInk text-white');
+                    btn.className = `border-[3px] border-brandInk rounded-xl py-3 px-2 font-black text-xs sm:text-sm text-center shadow-brutal-sm ${activeColor}`;
+                } else {
+                    btn.className = 'border-[3px] border-brandInk rounded-xl py-3 px-2 font-black text-xs sm:text-sm text-center bg-white text-brandInk opacity-70 hover:opacity-100';
+                }
+            });
+        }
+
+        function setDetailPaymentStatus(status, autoAdjustAmounts = true) {
+            state.detailPaymentStatus = status;
+            ['Pendiente', 'Adelanto', 'Pagado'].forEach(st => {
+                const btn = document.getElementById(`detail-pay-btn-${st}`);
+                if (!btn) return;
+                btn.className = st === status
+                    ? 'border-2 border-brandInk rounded-xl py-2.5 px-2 font-black text-xs sm:text-sm bg-brandInk text-white shadow-brutal-sm'
+                    : 'border-2 border-brandInk rounded-xl py-2.5 px-2 font-black text-xs sm:text-sm bg-white text-brandInk';
+            });
+
+            if (autoAdjustAmounts) {
+                const costo = parseFloat(document.getElementById('detail-final-cost')?.value) || 0;
+                const adelantoEl = document.getElementById('detail-adelanto');
+                if (adelantoEl) {
+                    if (status === 'Pagado' && costo > 0) adelantoEl.value = costo.toFixed(2);
+                    if (status === 'Pendiente') adelantoEl.value = '';
+                }
+            }
+            recalculateDetailPayment();
+        }
+
+        function recalculateDetailPayment(source = '') {
+            const sym = state.settings.currency || 'S/';
+            const costo = parseFloat(document.getElementById('detail-final-cost')?.value) || 0;
+            let adelanto = parseFloat(document.getElementById('detail-adelanto')?.value) || 0;
+
+            if (source === 'adelanto' && adelanto > 0 && state.detailPaymentStatus === 'Pendiente') {
+                state.detailPaymentStatus = 'Adelanto';
+                ['Pendiente', 'Adelanto', 'Pagado'].forEach(st => {
+                    const btn = document.getElementById(`detail-pay-btn-${st}`);
+                    if (btn) {
+                        btn.className = st === 'Adelanto'
+                            ? 'border-2 border-brandInk rounded-xl py-2.5 px-2 font-black text-xs sm:text-sm bg-brandInk text-white shadow-brutal-sm'
+                            : 'border-2 border-brandInk rounded-xl py-2.5 px-2 font-black text-xs sm:text-sm bg-white text-brandInk';
+                    }
+                });
+            }
+
+            if (state.detailPaymentStatus === 'Pagado' && costo > 0) {
+                adelanto = costo;
+            }
+
+            const saldo = Math.max(0, costo - adelanto);
+            const saldoDisplay = document.getElementById('detail-saldo-display');
+            if (saldoDisplay) saldoDisplay.textContent = `${sym} ${saldo.toFixed(2)}`;
+
+            const badge = document.getElementById('detail-payment-status-badge');
+            if (badge) {
+                badge.textContent = state.detailPaymentStatus.toUpperCase();
+                if (state.detailPaymentStatus === 'Pagado') {
+                    badge.className = 'text-xs font-black px-2.5 py-0.5 rounded-full border-2 border-brandInk bg-brandGreen text-white';
+                } else if (state.detailPaymentStatus === 'Adelanto') {
+                    badge.className = 'text-xs font-black px-2.5 py-0.5 rounded-full border-2 border-brandInk bg-brandYellow text-brandInk';
+                } else {
+                    badge.className = 'text-xs font-black px-2.5 py-0.5 rounded-full border-2 border-brandInk bg-neutral-200 text-brandInk';
+                }
+            }
+
+            const btnLiquidar = document.getElementById('btn-liquidar-saldo');
+            if (btnLiquidar) {
+                btnLiquidar.classList.toggle('hidden', !(costo > 0 && saldo > 0));
+            }
+        }
+
+        function liquidarSaldoDetail() {
+            const costo = parseFloat(document.getElementById('detail-final-cost')?.value) || 0;
+            if (costo > 0) {
+                document.getElementById('detail-adelanto').value = costo.toFixed(2);
+            }
+            setDetailPaymentStatus('Pagado', false);
+            saveOrderTechnicalDetails();
+        }
+
+        function renderDetailPhotos(order) {
+            const grid = document.getElementById('detail-photos-grid');
+            const badge = document.getElementById('detail-photo-count');
+            const photos = Array.isArray(order.photos) ? order.photos : [];
+            if (badge) badge.textContent = photos.length;
+            if (!grid) return;
+
+            if (photos.length === 0) {
+                grid.innerHTML = `<p class="col-span-full text-xs font-semibold text-neutral-400">Sin fotos registradas.</p>`;
+                return;
+            }
+
+            grid.innerHTML = photos.map((src, idx) => `
+                <div class="relative border-2 border-brandInk rounded-xl overflow-hidden aspect-square bg-neutral-100">
+                    <img src="${src}" onclick="openPhotoLightbox('${src}')" class="w-full h-full object-cover cursor-zoom-in">
+                    <button type="button" onclick="removeDetailPhoto(${idx})" class="absolute top-1.5 right-1.5 bg-red-600 text-white w-6 h-6 rounded-full font-black text-xs border border-brandInk flex items-center justify-center shadow">
+                        ✕
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        async function handleDetailPhotoUpload(event) {
+            const files = Array.from(event.target.files || []);
+            const order = state.orders.find(o => o.id === state.selectedOrderId);
+            if (!files.length || !order) return;
+
+            if (!order.photos) order.photos = [];
+            for (const file of files) {
+                const dataUrl = await compressImageFile(file);
+                if (dataUrl) order.photos.push(dataUrl);
+            }
+
+            await saveToStorage(order);
+            renderDetailPhotos(order);
+            showToast(`${files.length} ${files.length === 1 ? 'foto añadida' : 'fotos añadidas'}`);
+            event.target.value = '';
+        }
+
+        async function removeDetailPhoto(index) {
+            const order = state.orders.find(o => o.id === state.selectedOrderId);
+            if (!order || !order.photos) return;
+            order.photos.splice(index, 1);
+            await saveToStorage(order);
+            renderDetailPhotos(order);
+            showToast('Foto eliminada');
+        }
+
+        async function updateOrderStatus(newStatus) {
+            const order = state.orders.find(o => o.id === state.selectedOrderId);
+            if (!order) return;
+
+            order.status = newStatus;
+            await saveToStorage(order);
+            updateDetailStatusButtonsUI(newStatus);
+            showToast(`Estado actualizado a: ${newStatus}`);
+        }
+
+        async function saveOrderTechnicalDetails() {
+            const order = state.orders.find(o => o.id === state.selectedOrderId);
+            if (!order) return;
+
+            const costo = parseFloat(document.getElementById('detail-final-cost').value) || 0;
+            let adelanto = parseFloat(document.getElementById('detail-adelanto').value) || 0;
+
+            if (state.detailPaymentStatus === 'Pagado' && costo > 0) {
+                adelanto = costo;
+            } else if (state.detailPaymentStatus === 'Pendiente') {
+                adelanto = 0;
+            }
+
+            order.techNotes = document.getElementById('detail-tech-notes').value.trim();
+            order.costo = costo;
+            order.adelanto = adelanto;
+            order.paymentStatus = state.detailPaymentStatus;
+
+            await saveToStorage(order);
+            showToast('Pagos, adelanto y notas guardados');
+        }
+
+        function openCurrentReceipt() {
+            if (state.selectedOrderId) {
+                openReceiptById(state.selectedOrderId);
+            }
+        }
+
+        async function deleteCurrentOrder() {
+            if (pendingDeleteId !== state.selectedOrderId) {
+                pendingDeleteId = state.selectedOrderId;
+                showToast('Presiona de nuevo 🗑️ para confirmar eliminación', 'error');
+                clearTimeout(deleteConfirmTimeout);
+                deleteConfirmTimeout = setTimeout(() => { pendingDeleteId = null; }, 4000);
+                return;
+            }
+
+            const deletedId = state.selectedOrderId;
+            state.orders = state.orders.filter(o => o.id !== deletedId);
+            pendingDeleteId = null;
+            await deleteOrderFromCloud(deletedId);
+            await saveToStorage();
+            showToast('Orden eliminada');
+            navigateTo('dashboard');
+        }
+
+        // =========================================================
+        // AJUSTES, CÓDIGO DE TALLER Y CONEXIÓN GITHUB / FIREBASE
+        // =========================================================
+        async function openSettingsModal() {
+            document.getElementById('settings-shop-name').value = state.settings.shopName;
+            document.getElementById('settings-shop-subinfo').value = state.settings.shopSubinfo || '';
+            document.getElementById('settings-currency').value = state.settings.currency;
+            document.getElementById('settings-workshop-code').value = state.settings.workshopCode || 'TALLER01';
+
+            const extCfg = await idbGet('external_firebase_config');
+            document.getElementById('settings-firebase-config').value = extCfg ? JSON.stringify(extCfg, null, 2) : '';
+            document.getElementById('modal-cloud-mode').textContent = cloudConnected ? 'CONECTADO' : 'LOCAL';
+
+            document.getElementById('settings-modal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').classList.add('hidden');
+        }
+
+        async function saveSettings() {
+            const newName = document.getElementById('settings-shop-name').value.trim() || 'Mi Taller';
+            const newSubinfo = document.getElementById('settings-shop-subinfo').value.trim();
+            const newCurrency = document.getElementById('settings-currency').value;
+            const newCode = sanitizeWorkshopCode(document.getElementById('settings-workshop-code').value);
+            const codeChanged = newCode !== state.settings.workshopCode;
+            
+            state.settings.shopName = newName;
+            state.settings.shopSubinfo = newSubinfo;
+            state.settings.currency = newCurrency;
+            state.settings.workshopCode = newCode;
+
+            await saveToStorage();
+            applySettingsUI();
+            if (codeChanged && cloudConnected) {
+                subscribeToWorkshopData();
+            }
+            closeSettingsModal();
+            showToast(`Ajustes guardados (Taller: ${newCode})`);
+        }
+
+        async function saveExternalFirebaseConfig() {
+            const raw = document.getElementById('settings-firebase-config').value.trim();
+            if (!raw) {
+                await idbSet('external_firebase_config', null);
+                showToast('Configuración externa borrada');
+                return;
+            }
+            try {
+                // Permite pegar tanto JSON puro como el objeto js de firebaseConfig
+                const cleaned = raw.replace(/const\s+firebaseConfig\s*=\s*/, '').replace(/;$/, '');
+                const parsed = Function('"use strict";return (' + cleaned + ')')();
+                if (!parsed || !parsed.apiKey || !parsed.projectId) {
+                    showToast('Falta apiKey o projectId en la configuración', 'error');
+                    return;
+                }
+                await idbSet('external_firebase_config', parsed);
+                showToast('Configuración guardada. Reiniciando sincronización...');
+                setTimeout(() => window.location.reload(), 900);
+            } catch (e) {
+                showToast('Formato inválido. Pega el objeto firebaseConfig', 'error');
+            }
+        }
+
+        // =========================================================
+        // RESPALDO JSON Y VISOR DE FOTOS (LIGHTBOX)
+        // =========================================================
+        function exportBackupJSON() {
+            const backup = {
+                exportedAt: new Date().toISOString(),
+                settings: state.settings,
+                orderCounter: state.orderCounter,
+                orders: state.orders
+            };
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `respaldo_taller_${getPeruDateString().replace(/\//g, '-')}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Copia de seguridad descargada');
+        }
+
+        function importBackupJSON(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (Array.isArray(data.orders)) {
+                        state.orders = data.orders;
+                        if (data.settings) state.settings = { ...state.settings, ...data.settings };
+                        if (data.orderCounter) state.orderCounter = data.orderCounter;
+
+                        for (const ord of state.orders) {
+                            await syncOrderToCloud(ord);
+                        }
+                        await saveToStorage();
+                        applySettingsUI();
+                        renderDashboard();
+                        closeSettingsModal();
+                        showToast('Respaldo restaurado y sincronizado');
+                    } else {
+                        showToast('El archivo JSON no es válido', 'error');
+                    }
+                } catch (err) {
+                    showToast('Error al leer el archivo JSON', 'error');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function openPhotoLightbox(src) {
+            const modal = document.getElementById('photo-lightbox');
+            const img = document.getElementById('lightbox-img');
+            if (modal && img) {
+                img.src = src;
+                modal.classList.remove('hidden');
+            }
+        }
+
+        function closePhotoLightbox() {
+            const modal = document.getElementById('photo-lightbox');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        // Exponer funciones al ámbito global para los eventos onclick del HTML
+        Object.assign(window, {
+            navigateTo,
+            setFilter,
+            clearSearch,
+            renderOrdersList,
+            openOrderDetail,
+            openReceiptById,
+            quickMarkReady,
+            selectQuickFault,
+            toggleAccessory,
+            setFormPaymentStatus,
+            recalculateFormPayment,
+            handlePhotoUpload,
+            removeFormPhoto,
+            handleSaveOrder,
+            openCurrentReceipt,
+            deleteCurrentOrder,
+            updateOrderStatus,
+            setDetailPaymentStatus,
+            recalculateDetailPayment,
+            liquidarSaldoDetail,
+            saveOrderTechnicalDetails,
+            handleDetailPhotoUpload,
+            removeDetailPhoto,
+            openSettingsModal,
+            closeSettingsModal,
+            saveSettings,
+            saveExternalFirebaseConfig,
+            exportBackupJSON,
+            importBackupJSON,
+            openPhotoLightbox,
+            closePhotoLightbox
+        });
+    </script>
+</body>
+</html>
