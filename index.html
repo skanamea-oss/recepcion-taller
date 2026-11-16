@@ -203,7 +203,6 @@
                 </div>
 
                 <div class="flex items-center gap-2 shrink-0">
-                    <!-- BOTÓN DE GUARDADO LOCAL MANUAL -->
                     <button onclick="forceManualLocalStorageSave()" class="neo-btn bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-extrabold px-3 py-2 rounded-xl flex items-center gap-1.5" title="Guardar cambios localmente en este dispositivo">
                         <i class="fa-solid fa-floppy-disk text-emerald-200"></i>
                         <span class="hidden sm:inline">Guardar Local</span>
@@ -217,7 +216,7 @@
                         <button id="settingsBtn" onclick="toggleSettingsMenu(event)" class="neo-btn bg-neoCard hover:bg-neoCardInner text-neoGold w-9 h-9 rounded-xl flex items-center justify-center" title="Ajustes y Reportes">
                             <i class="fa-solid fa-gear text-sm"></i>
                         </button>
-                        <div id="settingsDropdown" class="absolute right-0 mt-2 w-60 bg-neoCard border-2 border-neoBorder rounded-xl shadow-2xl p-2 hidden z-50">
+                        <div id="settingsDropdown" class="absolute right-0 mt-2 w-64 bg-neoCard border-2 border-neoBorder rounded-xl shadow-2xl p-2 hidden z-50">
                             <button onclick="openCloudSettingsModal(); closeSettingsMenu();" class="w-full text-left px-3 py-2 text-xs text-neoGold hover:bg-neoCardInner rounded-lg flex items-center gap-2 font-bold">
                                 <i class="fa-solid fa-cloud"></i> Nube Firebase & Marca
                             </button>
@@ -225,16 +224,21 @@
                                 <i class="fa-solid fa-arrows-rotate"></i> Sincronizar con Nube
                             </button>
                             <hr class="border-neoBorder my-1">
-                            <button onclick="openPrintRegisterModal(); closeSettingsMenu();" class="w-full text-left px-3 py-2 text-xs text-gray-200 hover:bg-neoCardInner rounded-lg flex items-center gap-2 font-semibold">
-                                <i class="fa-solid fa-print text-neoGold"></i> Imprimir Registro General
+                            <button onclick="toggleAutoBackup24h(); closeSettingsMenu();" class="w-full text-left px-3 py-2 text-xs text-amber-300 hover:bg-neoCardInner rounded-lg flex items-center justify-between font-semibold">
+                                <span><i class="fa-solid fa-clock-rotate-left mr-1.5"></i>Auto-descarga 24h</span>
+                                <span id="autoBackupStatusLabel" class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-neoBg border border-neoBorder">OFF</span>
                             </button>
-                            <button onclick="exportData(); closeSettingsMenu();" class="w-full text-left px-3 py-2 text-xs text-gray-200 hover:bg-neoCardInner rounded-lg flex items-center gap-2">
-                                <i class="fa-solid fa-download text-blue-400"></i> Exportar Respaldo (.JSON)
+                            <button onclick="exportData(true); closeSettingsMenu();" class="w-full text-left px-3 py-2 text-xs text-gray-200 hover:bg-neoCardInner rounded-lg flex items-center gap-2">
+                                <i class="fa-solid fa-download text-blue-400"></i> Descargar Copia Local (.JSON)
                             </button>
                             <label class="w-full text-left px-3 py-2 text-xs text-gray-200 hover:bg-neoCardInner rounded-lg flex items-center gap-2 cursor-pointer">
                                 <i class="fa-solid fa-upload text-emerald-400"></i> Importar Respaldo (.JSON)
                                 <input type="file" onchange="importData(event); closeSettingsMenu();" class="hidden" accept=".json">
                             </label>
+                            <hr class="border-neoBorder my-1">
+                            <button onclick="openPrintRegisterModal(); closeSettingsMenu();" class="w-full text-left px-3 py-2 text-xs text-gray-200 hover:bg-neoCardInner rounded-lg flex items-center gap-2 font-semibold">
+                                <i class="fa-solid fa-print text-neoGold"></i> Imprimir Registro General
+                            </button>
                             <hr class="border-neoBorder my-1">
                             <button onclick="confirmResetData(); closeSettingsMenu();" class="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-red-950/50 rounded-lg flex items-center gap-2">
                                 <i class="fa-solid fa-trash"></i> Borrar Todas las Órdenes
@@ -244,6 +248,29 @@
                 </div>
             </div>
         </header>
+
+        <!-- AVISO DE RESPALDO LOCAL CADA 24 HORAS -->
+        <div id="backup24hBanner" class="hidden bg-amber-500/15 border-b-2 border-neoGold">
+            <div class="max-w-5xl mx-auto px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5 text-xs">
+                    <span class="w-7 h-7 rounded-lg bg-neoGold text-neoBg flex items-center justify-center shrink-0 font-black">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </span>
+                    <div>
+                        <p class="font-black text-neoGold">Recordatorio de Seguridad (24h)</p>
+                        <p id="backup24hBannerSub" class="text-[11px] text-zinc-300">Han pasado más de 24 horas desde tu última copia local en archivo.</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="exportData(true)" class="neo-btn bg-neoGold hover:bg-amber-300 text-neoBg px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5">
+                        <i class="fa-solid fa-download"></i> Hacer Copia Ahora
+                    </button>
+                    <button onclick="snoozeBackupReminder()" class="text-zinc-400 hover:text-white text-xs px-2 py-1" title="Posponer aviso 6 horas">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <!-- CONTENEDOR PRINCIPAL -->
         <main class="max-w-5xl mx-auto px-3 sm:px-6 py-5 sm:py-7 space-y-4 sm:space-y-5">
@@ -284,6 +311,9 @@
                         </p>
                         <p class="text-xs text-zinc-300 font-medium pt-0.5">
                             Hoy • <span id="todayReceivedCount" class="font-extrabold text-rose-400">0 equipos</span> recibidos hoy
+                        </p>
+                        <p class="text-[11px] text-zinc-400 font-mono">
+                            Última copia local (.JSON): <span id="lastBackupTimeText" class="text-emerald-400 font-bold">Nunca</span>
                         </p>
                     </div>
                 </div>
@@ -384,7 +414,7 @@
         </div>
     </div>
 
-    <!-- MODAL: NUEVA / EDITAR ORDEN (CON CHECKLIST DE ACCESORIOS Y FOTOS) -->
+    <!-- MODAL: NUEVA / EDITAR ORDEN (CON CHECKLIST, FOTOS Y GARANTÍA) -->
     <div id="modalDevice" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-2 sm:p-4 modal modal-hidden overflow-y-auto">
         <div class="neo-box w-full max-w-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
             <div class="flex items-center justify-between border-b-2 border-neoBorder pb-3">
@@ -515,6 +545,44 @@
                     </div>
                 </div>
 
+                <!-- APARTADO DE GARANTÍA -->
+                <div class="bg-neoBg/90 border-2 border-neoBorder rounded-xl p-3.5 space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h4 class="text-[11px] font-black text-neoGold uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-shield-halved"></i> Garantía del Servicio / Repuesto
+                        </h4>
+                        <select id="devHasWarranty" onchange="toggleWarrantyFields()" class="bg-neoCard border-2 border-neoBorder rounded-lg px-2.5 py-1 text-xs text-white font-bold focus:outline-none focus:border-neoGold">
+                            <option value="yes">✅ Con Garantía</option>
+                            <option value="no">🚫 Sin Garantía</option>
+                        </select>
+                    </div>
+
+                    <div id="warrantyDetailsSection" class="space-y-3 pt-1">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Días de Garantía</label>
+                                <input type="number" min="1" max="365" id="devWarrantyDays" value="30" class="w-full bg-neoCard border-2 border-neoBorder rounded-xl px-3 py-2 text-xs text-neoGold font-mono font-bold focus:outline-none focus:border-neoGold">
+                            </div>
+                            <div class="flex gap-1.5 flex-wrap">
+                                <button type="button" onclick="setWarrantyPresetDays(7)" class="neo-btn bg-neoCard hover:bg-neoCardInner text-zinc-200 px-2.5 py-2 rounded-lg text-[11px] font-mono font-bold">7d</button>
+                                <button type="button" onclick="setWarrantyPresetDays(15)" class="neo-btn bg-neoCard hover:bg-neoCardInner text-zinc-200 px-2.5 py-2 rounded-lg text-[11px] font-mono font-bold">15d</button>
+                                <button type="button" onclick="setWarrantyPresetDays(30)" class="neo-btn bg-neoCard hover:bg-neoCardInner text-zinc-200 px-2.5 py-2 rounded-lg text-[11px] font-mono font-bold">30d</button>
+                                <button type="button" onclick="setWarrantyPresetDays(90)" class="neo-btn bg-neoCard hover:bg-neoCardInner text-zinc-200 px-2.5 py-2 rounded-lg text-[11px] font-mono font-bold">90d</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-semibold text-zinc-400 mb-1">¿Qué cubre la garantía y exclusiones?</label>
+                            <textarea id="devWarrantyTerms" rows="2" placeholder="Ej: Cubre defecto de fábrica del repuesto cambiado y mano de obra. No cubre golpes, caídas, humedad ni manipulación de terceros." class="w-full bg-neoCard border-2 border-neoBorder rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-neoGold"></textarea>
+                        </div>
+                    </div>
+
+                    <div id="noWarrantySection" class="hidden pt-1">
+                        <label class="block text-[11px] font-semibold text-zinc-400 mb-1">Motivo de servicio sin garantía (Opcional)</label>
+                        <input type="text" id="devNoWarrantyReason" placeholder="Ej: Equipo mojado / Servicio de software / Bajo riesgo del cliente" class="w-full bg-neoCard border-2 border-neoBorder rounded-xl px-3 py-2 text-xs text-rose-300 focus:outline-none focus:border-neoGold">
+                    </div>
+                </div>
+
                 <!-- Montos -->
                 <div class="grid grid-cols-3 gap-3 bg-neoBg border-2 border-neoBorder rounded-xl p-3">
                     <div>
@@ -578,6 +646,11 @@
                     <p class="font-bold text-[11px] uppercase">Falla / Servicio:</p>
                     <p id="tkIssue" class="text-[11px]">-</p>
                 </div>
+                <div class="bg-amber-100/80 p-2.5 rounded-lg border border-amber-400 space-y-1">
+                    <p class="font-bold text-[11px] uppercase text-stone-900">Garantía:</p>
+                    <p id="tkWarrantyStatus" class="text-[11px] font-bold">-</p>
+                    <p id="tkWarrantyTerms" class="text-[10px] text-stone-700 leading-tight">-</p>
+                </div>
                 <div class="border-t-2 border-dashed border-stone-400 pt-2 space-y-1 text-xs">
                     <div class="flex justify-between"><span>TOTAL:</span> <strong id="tkTotal">S/ 0.00</strong></div>
                     <div class="flex justify-between"><span>ADELANTO:</span> <strong id="tkAdvance">S/ 0.00</strong></div>
@@ -629,7 +702,7 @@
                             <th class="p-2 border border-stone-700">Orden</th>
                             <th class="p-2 border border-stone-700">Cliente</th>
                             <th class="p-2 border border-stone-700">Equipo</th>
-                            <th class="p-2 border border-stone-700">Falla</th>
+                            <th class="p-2 border border-stone-700">Falla / Garantía</th>
                             <th class="p-2 border border-stone-700">Estado</th>
                             <th class="p-2 border border-stone-700 text-right">Total</th>
                             <th class="p-2 border border-stone-700 text-right">Saldo</th>
@@ -694,6 +767,7 @@
         const STORAGE_KEY = 'DvelaDevices_NeoDark_v2';
         const CLOUD_CFG_KEY = 'DvelaDevices_NeoCloud_v1';
         const BRAND_CFG_KEY = 'DvelaDevices_NeoBrand_v1';
+        const BACKUP_META_KEY = 'DvelaDevices_BackupMeta_v1';
 
         const PRESET_FIREBASE_CONFIG = {
             apiKey: "AIzaSyCWbmkEWub3hO_yYLhlszNTD2vF3ScjdBA",
@@ -708,6 +782,7 @@
         let appState = { orderCounter: 1, devices: [], updatedAt: 0 };
         let brandConfig = { name: 'Taller DVELA SHOP', slogan: 'TECNOLOGÍA • CONFIANZA • CALIDAD' };
         let cloudConfig = { spaceId: 'TALLER01', firebaseConfig: PRESET_FIREBASE_CONFIG };
+        let backupMeta = { lastBackupTimestamp: 0, autoDownload24h: false, snoozedUntil: 0 };
 
         let firestoreDb = null, currentUser = null, unsubscribeSnapshot = null, isApplyingRemoteUpdate = false;
         let activeFilter = 'all';
@@ -745,11 +820,89 @@
                 if (c) cloudConfig = { ...cloudConfig, ...JSON.parse(c) };
                 const s = localStorage.getItem(STORAGE_KEY);
                 if (s) appState = { ...appState, ...JSON.parse(s) };
+                const bm = localStorage.getItem(BACKUP_META_KEY);
+                if (bm) backupMeta = { ...backupMeta, ...JSON.parse(bm) };
             } catch (e) {}
+
             applyBrandUI();
+            updateBackupUI();
             renderAll();
+            check24hBackupSystem();
+            setInterval(check24hBackupSystem, 60000); // Revisar cada minuto
             await initCloudSync();
         });
+
+        function saveBackupMeta() {
+            localStorage.setItem(BACKUP_META_KEY, JSON.stringify(backupMeta));
+            updateBackupUI();
+        }
+
+        function updateBackupUI() {
+            const statusLabel = document.getElementById('autoBackupStatusLabel');
+            if (statusLabel) {
+                statusLabel.innerText = backupMeta.autoDownload24h ? 'ON' : 'OFF';
+                statusLabel.className = backupMeta.autoDownload24h
+                    ? 'font-mono text-[10px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-600 font-bold'
+                    : 'font-mono text-[10px] px-1.5 py-0.5 rounded bg-neoBg text-zinc-400 border border-neoBorder';
+            }
+
+            const lastEl = document.getElementById('lastBackupTimeText');
+            if (lastEl) {
+                if (!backupMeta.lastBackupTimestamp) {
+                    lastEl.innerText = 'Pendiente';
+                    lastEl.className = 'text-amber-400 font-bold';
+                } else {
+                    const formatted = new Intl.DateTimeFormat('es-PE', {
+                        timeZone: 'America/Lima', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false
+                    }).format(new Date(backupMeta.lastBackupTimestamp));
+                    lastEl.innerText = formatted;
+                    lastEl.className = 'text-emerald-400 font-bold';
+                }
+            }
+        }
+
+        function check24hBackupSystem() {
+            const banner = document.getElementById('backup24hBanner');
+            if (!banner) return;
+
+            const hasDevices = Array.isArray(appState.devices) && appState.devices.length > 0;
+            if (!hasDevices) {
+                banner.classList.add('hidden');
+                return;
+            }
+
+            const now = Date.now();
+            const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+            const elapsed = now - (backupMeta.lastBackupTimestamp || 0);
+
+            if (elapsed >= TWENTY_FOUR_HOURS) {
+                if (backupMeta.autoDownload24h) {
+                    exportData(true);
+                    showToast("Copia Automática (24h)", "Respaldo .JSON descargado automáticamente");
+                    banner.classList.add('hidden');
+                } else if (now >= (backupMeta.snoozedUntil || 0)) {
+                    banner.classList.remove('hidden');
+                }
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+
+        window.toggleAutoBackup24h = function() {
+            backupMeta.autoDownload24h = !backupMeta.autoDownload24h;
+            saveBackupMeta();
+            showToast(
+                backupMeta.autoDownload24h ? "Auto-respaldo 24h Activado" : "Auto-respaldo 24h Desactivado",
+                backupMeta.autoDownload24h ? "Se descargará un .JSON cada 24h" : "Solo se mostrará aviso visual"
+            );
+            check24hBackupSystem();
+        };
+
+        window.snoozeBackupReminder = function() {
+            backupMeta.snoozedUntil = Date.now() + (6 * 60 * 60 * 1000); // Posponer 6h
+            saveBackupMeta();
+            document.getElementById('backup24hBanner').classList.add('hidden');
+        };
 
         function applyBrandUI() {
             document.getElementById('topHeaderTitle').innerText = brandConfig.name;
@@ -826,7 +979,7 @@
 
         window.forceManualLocalStorageSave = function() {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-            showToast("Guardado Local Exitoso", "Todos los datos se guardaron en este equipo");
+            showToast("Guardado Local Exitoso", "Todos los datos se guardaron en el navegador");
         };
 
         function showToast(title, subtitle) {
@@ -834,7 +987,7 @@
             document.getElementById('toastTitle').innerText = title;
             document.getElementById('toastSubtitle').innerText = subtitle;
             t.classList.remove('translate-y-24', 'opacity-0');
-            setTimeout(() => t.classList.add('translate-y-24', 'opacity-0'), 2400);
+            setTimeout(() => t.classList.add('translate-y-24', 'opacity-0'), 2600);
         }
 
         function saveState() {
@@ -955,6 +1108,11 @@
                 if (checks.screenOk) checksTags.push('🖥️ Pantalla Sana');
                 if (checks.isWet) checksTags.push('💧 Mojado/Humedad');
 
+                const warranty = dev.warranty || { hasWarranty: false };
+                const warrantyBadge = warranty.hasWarranty
+                    ? `<span class="px-2 py-0.5 rounded bg-emerald-950/70 border border-emerald-600/60 text-[10px] text-emerald-300 font-bold"><i class="fa-solid fa-shield-halved mr-1"></i>Garantía: ${warranty.days || 30} días</span>`
+                    : `<span class="px-2 py-0.5 rounded bg-rose-950/70 border border-rose-600/60 text-[10px] text-rose-300 font-bold"><i class="fa-solid fa-ban mr-1"></i>Sin Garantía</span>`;
+
                 let photosHtml = '';
                 if (Array.isArray(dev.photos) && dev.photos.length > 0) {
                     photosHtml = `<div class="flex gap-1.5 overflow-x-auto pt-1">` +
@@ -970,6 +1128,7 @@
                             <div class="flex items-center gap-2 flex-wrap">
                                 <span class="font-mono text-xs font-black text-neoGold bg-neoCardInner px-2 py-0.5 rounded border border-neoBorder">${dev.orderCode}</span>
                                 <span class="px-2.5 py-0.5 rounded-full border text-[11px] font-extrabold ${statusColor}">${dev.status}</span>
+                                ${warrantyBadge}
                                 <span class="font-mono text-[11px] text-zinc-400">${dev.entryDate}</span>
                                 ${dev.location ? `<span class="text-[11px] font-mono text-sky-300 bg-sky-950/50 px-2 py-0.5 rounded border border-sky-700/50"><i class="fa-solid fa-location-dot text-[10px]"></i> ${dev.location}</span>` : ''}
                             </div>
@@ -987,6 +1146,8 @@
                             <a href="${waUrl}" target="_blank" class="font-mono font-bold text-emerald-400 hover:underline"><i class="fa-brands fa-whatsapp"></i> ${dev.clientPhone}</a>
                         </div>
                         <p class="text-zinc-200"><strong>Falla:</strong> ${dev.issue}</p>
+                        ${warranty.hasWarranty && warranty.terms ? `<p class="text-[11px] text-emerald-300/90"><strong>Cobertura (${warranty.days}d):</strong> ${warranty.terms}</p>` : ''}
+                        ${!warranty.hasWarranty && warranty.noReason ? `<p class="text-[11px] text-rose-300/90"><strong>Nota Garantía:</strong> ${warranty.noReason}</p>` : ''}
                         ${dev.passcode ? `<p class="font-mono text-[11px] text-neoGold"><strong>Clave:</strong> ${dev.passcode}</p>` : ''}
                         
                         <div class="flex flex-wrap gap-1.5 pt-1">
@@ -1016,6 +1177,23 @@
                 `;
                 container.appendChild(card);
             });
+        };
+
+        window.toggleWarrantyFields = function() {
+            const val = document.getElementById('devHasWarranty').value;
+            const yesBox = document.getElementById('warrantyDetailsSection');
+            const noBox = document.getElementById('noWarrantySection');
+            if (val === 'yes') {
+                yesBox.classList.remove('hidden');
+                noBox.classList.add('hidden');
+            } else {
+                yesBox.classList.add('hidden');
+                noBox.classList.remove('hidden');
+            }
+        };
+
+        window.setWarrantyPresetDays = function(days) {
+            document.getElementById('devWarrantyDays').value = days;
         };
 
         window.openDeviceModal = function(editId = '') {
@@ -1052,6 +1230,12 @@
                 document.getElementById('chkScreenOk').checked = !!checks.screenOk;
                 document.getElementById('chkWet').checked = !!checks.isWet;
 
+                const w = d.warranty || { hasWarranty: true, days: 30, terms: '', noReason: '' };
+                document.getElementById('devHasWarranty').value = w.hasWarranty ? 'yes' : 'no';
+                document.getElementById('devWarrantyDays').value = w.days || 30;
+                document.getElementById('devWarrantyTerms').value = w.terms || '';
+                document.getElementById('devNoWarrantyReason').value = w.noReason || '';
+
                 if (Array.isArray(d.photos)) {
                     tempDevicePhotos = [...d.photos];
                     renderPhotosPreview();
@@ -1068,7 +1252,13 @@
                 document.getElementById('chkTurnsOn').checked = true;
                 document.getElementById('chkCharges').checked = true;
                 document.getElementById('chkScreenOk').checked = true;
+
+                document.getElementById('devHasWarranty').value = 'yes';
+                document.getElementById('devWarrantyDays').value = 30;
+                document.getElementById('devWarrantyTerms').value = 'Cubre defecto de fábrica del repuesto cambiado y mano de obra. No cubre golpes, caídas, humedad ni manipulación de terceros.';
+                document.getElementById('devNoWarrantyReason').value = '';
             }
+            toggleWarrantyFields();
             recalcModalBalance();
             modal.classList.remove('modal-hidden');
         };
@@ -1113,6 +1303,8 @@
         window.handleDeviceFormSubmit = function(e) {
             e.preventDefault();
             const editId = document.getElementById('editingDeviceId').value;
+            const hasWarranty = document.getElementById('devHasWarranty').value === 'yes';
+
             const obj = {
                 id: editId || Date.now().toString(),
                 orderCode: document.getElementById('devOrderCode').value,
@@ -1137,6 +1329,12 @@
                     screenOk: document.getElementById('chkScreenOk').checked,
                     isWet: document.getElementById('chkWet').checked
                 },
+                warranty: {
+                    hasWarranty: hasWarranty,
+                    days: hasWarranty ? (parseInt(document.getElementById('devWarrantyDays').value) || 30) : 0,
+                    terms: hasWarranty ? document.getElementById('devWarrantyTerms').value.trim() : '',
+                    noReason: !hasWarranty ? document.getElementById('devNoWarrantyReason').value.trim() : ''
+                },
                 photos: [...tempDevicePhotos],
                 createdAt: editId ? (appState.devices.find(x => x.id === editId)?.createdAt || Date.now()) : Date.now()
             };
@@ -1150,6 +1348,7 @@
             saveState();
             closeDeviceModal();
             renderAll();
+            check24hBackupSystem();
         };
 
         window.markAsDelivered = function(id) {
@@ -1191,6 +1390,15 @@
             if (checks.isWet) cList.push('MOJADO');
             document.getElementById('tkChecks').innerText = cList.join(', ');
 
+            const w = d.warranty || { hasWarranty: false };
+            if (w.hasWarranty) {
+                document.getElementById('tkWarrantyStatus').innerText = `CON GARANTÍA: ${w.days} DÍAS`;
+                document.getElementById('tkWarrantyTerms').innerText = w.terms || 'Cubre defectos de fábrica del repuesto instalado.';
+            } else {
+                document.getElementById('tkWarrantyStatus').innerText = `SERVICIO SIN GARANTÍA`;
+                document.getElementById('tkWarrantyTerms').innerText = w.noReason || 'Trabajo realizado sin garantía por condición del equipo.';
+            }
+
             const total = parseFloat(d.totalCost) || 0;
             const adv = parseFloat(d.advance) || 0;
             document.getElementById('tkTotal').innerText = formatMoney(total);
@@ -1214,6 +1422,12 @@
             const total = parseFloat(d.totalCost) || 0;
             const adv = parseFloat(d.advance) || 0;
             const bal = Math.max(0, total - adv);
+
+            const w = d.warranty || { hasWarranty: false };
+            const warrantyText = w.hasWarranty
+                ? `🛡️ *Garantía:* ${w.days} días (${w.terms || 'Cubre defecto de repuesto'})`
+                : `⚠️ *Garantía:* Sin garantía (${w.noReason || 'Por condición del equipo'})`;
+
             const msg = `*${brandConfig.name}*
 📋 *COMPROBANTE DE TALLER*
 • *Orden:* ${d.orderCode}
@@ -1222,6 +1436,7 @@
 • *Equipo:* ${d.brandModel}
 • *Falla:* ${d.issue}
 • *Estado:* ${d.status}
+• ${warrantyText}
 • *Total:* ${formatMoney(total)} | *Adelanto:* ${formatMoney(adv)}
 • *Saldo:* *${formatMoney(bal)}*`;
             window.open(`https://wa.me/51${phone}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -1237,11 +1452,13 @@
             list.forEach(d => {
                 const total = parseFloat(d.totalCost) || 0;
                 const bal = Math.max(0, total - (parseFloat(d.advance) || 0));
+                const w = d.warranty || { hasWarranty: false };
+                const wLabel = w.hasWarranty ? `Garantía: ${w.days}d` : 'Sin garantía';
                 tbody.innerHTML += `<tr>
                     <td class="p-2 border border-stone-300 font-mono font-bold">${d.orderCode}<br><span class="font-normal text-[10px]">${d.entryDate}</span></td>
                     <td class="p-2 border border-stone-300">${d.clientName}<br><span class="font-mono text-[10px]">${d.clientPhone}</span></td>
                     <td class="p-2 border border-stone-300 font-bold">${d.brandModel}</td>
-                    <td class="p-2 border border-stone-300">${d.issue}</td>
+                    <td class="p-2 border border-stone-300">${d.issue}<br><span class="text-[10px] font-bold text-stone-600">${wLabel}</span></td>
                     <td class="p-2 border border-stone-300 font-bold">${d.status}</td>
                     <td class="p-2 border border-stone-300 text-right font-mono">${formatMoney(total)}</td>
                     <td class="p-2 border border-stone-300 text-right font-mono font-bold">${formatMoney(bal)}</td>
@@ -1294,11 +1511,19 @@
             await pushStateToCloud();
         };
 
-        window.exportData = function() {
+        window.exportData = function(markBackupDone = true) {
             const a = document.createElement('a');
             a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
             a.download = `Taller_DVELA_${getPeruDateISO()}.json`;
             a.click();
+
+            if (markBackupDone) {
+                backupMeta.lastBackupTimestamp = Date.now();
+                backupMeta.snoozedUntil = 0;
+                saveBackupMeta();
+                document.getElementById('backup24hBanner').classList.add('hidden');
+                showToast("Copia Local Descargada", "Contador de 24 horas reiniciado");
+            }
         };
 
         window.importData = function(e) {
